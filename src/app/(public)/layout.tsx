@@ -24,12 +24,6 @@ export default async function PublicLayout({
             YourApp
           </Link>
           <nav className="flex items-center gap-4">
-            <Link href="/about" className="text-sm hover:underline">
-              About
-            </Link>
-            <Link href="/contact" className="text-sm hover:underline">
-              Contact
-            </Link>
             {isAuthenticated ? (
               <Button asChild size="sm">
                 <Link href="/dashboard">Dashboard</Link>

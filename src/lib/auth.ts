@@ -2,15 +2,10 @@ import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 
 // Define all protected routes
-export const protectedRoutes = [
-  "/dashboard",
-  "/account",
-  "/settings",
-  "/profile",
-]
+export const protectedRoutes = ["/dashboard", "/users"]
 
 // Define public routes that should be accessible even when logged in
-export const publicRoutes = ["/", "/about", "/contact"]
+export const publicRoutes = ["/"]
 
 // Define auth routes (login/signup)
 export const authRoutes = ["/login", "/signup", "/reset-password"]
