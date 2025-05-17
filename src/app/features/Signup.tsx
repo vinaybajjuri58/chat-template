@@ -26,12 +26,14 @@ export function SignupForm({
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const router = useRouter()
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setSuccess(null)
 
     // Basic validation
     if (password.length < 6) {
@@ -49,9 +51,17 @@ export function SignupForm({
         password,
       })
 
-      // Navigate to dashboard on success
-      router.push("/dashboard")
+      // Show success message
+      setSuccess(
+        "Account created successfully! Please check your email to verify your account."
+      )
+
+      // Delay before redirecting to dashboard
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 3000)
     } catch (err) {
+      // postToApi already extracts the error message
       setError(
         err instanceof Error ? err.message : "Signup failed. Please try again."
       )
@@ -75,6 +85,11 @@ export function SignupForm({
               {error && (
                 <div className="p-3 text-sm bg-red-100 text-red-700 rounded-md">
                   {error}
+                </div>
+              )}
+              {success && (
+                <div className="p-3 text-sm bg-green-100 text-green-700 rounded-md">
+                  {success}
                 </div>
               )}
               <div className="grid gap-3">
