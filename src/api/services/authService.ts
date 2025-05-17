@@ -128,8 +128,8 @@ export async function login(
       },
       status: 200,
     }
-  } catch (_err) {
-    // Rename error to err to avoid shadowing
+  } catch (error) {
+    console.error("Login error:", error)
     return {
       error: "Authentication failed",
       status: 500,
@@ -227,9 +227,9 @@ export async function signup(
         // Non-critical error, we still proceed with signup
         console.log("Email verification send error:", error.message)
       }
-    } catch (_err) {
+    } catch (error) {
       // Non-critical error, we still proceed with signup
-      console.log("Email verification error:", _err)
+      console.log("Email verification error:", error)
     }
 
     // Use Supabase's built-in trigger to create the profile
@@ -264,9 +264,10 @@ export async function signup(
       },
       status: 201,
     }
-  } catch (_err) {
+  } catch (error) {
     const errorMessage =
-      _err instanceof Error ? _err.message : "Registration failed"
+      error instanceof Error ? error.message : "Registration failed"
+    console.error("Signup error:", errorMessage)
 
     // Check for common error patterns
     if (
@@ -303,7 +304,8 @@ export async function signout(): Promise<ApiResponse<null>> {
       data: null,
       status: 200,
     }
-  } catch (_err) {
+  } catch (error) {
+    console.error("Sign out error:", error)
     return {
       error: "Failed to sign out",
       status: 500,

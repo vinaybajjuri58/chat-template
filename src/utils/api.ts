@@ -53,7 +53,10 @@ export async function fetchFromApi<T>(endpoint: string): Promise<T> {
   }
 }
 
-export async function postToApi<T>(endpoint: string, data: any): Promise<T> {
+export async function postToApi<T, D = Record<string, unknown>>(
+  endpoint: string,
+  data: D
+): Promise<T> {
   try {
     const response = await apiClient.post<T>(endpoint, data)
     return response.data
@@ -64,7 +67,10 @@ export async function postToApi<T>(endpoint: string, data: any): Promise<T> {
 }
 
 // Add more methods as needed
-export async function putToApi<T>(endpoint: string, data: any): Promise<T> {
+export async function putToApi<T, D = Record<string, unknown>>(
+  endpoint: string,
+  data: D
+): Promise<T> {
   try {
     const response = await apiClient.put<T>(endpoint, data)
     return response.data

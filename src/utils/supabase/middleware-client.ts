@@ -14,7 +14,7 @@ export function createMiddlewareClient(
         get(name: string) {
           return request.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: Record<string, unknown>) {
           request.cookies.set({
             name,
             value,
@@ -27,15 +27,10 @@ export function createMiddlewareClient(
             ...options,
           })
         },
-        remove(name: string, options: any) {
-          request.cookies.delete({
-            name,
-            ...options,
-          })
-          response.cookies.delete({
-            name,
-            ...options,
-          })
+        remove(name: string) {
+          // Next.js cookies.delete only accepts the name
+          request.cookies.delete(name)
+          response.cookies.delete(name)
         },
       },
     }

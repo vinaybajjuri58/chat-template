@@ -2,14 +2,24 @@ import { login, signup, signout } from "@/api/services/authService"
 import { LoginRequest, SignupRequest } from "@/api/utils/types"
 import { NextRequest, NextResponse } from "next/server"
 
+// Define a type for values that can be JSON serialized
+type JSONValue =
+  | string
+  | number
+  | boolean
+  | null
+  | Date
+  | JSONValue[]
+  | { [key: string]: JSONValue }
+
 // Helper function to ensure values are JSON serializable
-function sanitizeForJson(data: any): any {
+function sanitizeForJson(data: unknown): JSONValue {
   if (data === null || data === undefined) {
     return null
   }
 
   if (typeof data !== "object") {
-    return data
+    return data as JSONValue
   }
 
   // Handle Date objects
@@ -23,10 +33,10 @@ function sanitizeForJson(data: any): any {
   }
 
   // Handle plain objects
-  const result: Record<string, any> = {}
-  for (const key in data) {
+  const result: Record<string, JSONValue> = {}
+  for (const key in data as Record<string, unknown>) {
     if (Object.prototype.hasOwnProperty.call(data, key)) {
-      result[key] = sanitizeForJson(data[key])
+      result[key] = sanitizeForJson((data as Record<string, unknown>)[key])
     }
   }
   return result

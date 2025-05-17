@@ -11,8 +11,9 @@ export async function POST(req: NextRequest) {
     try {
       const body = await req.json()
       email = body.email || null
-    } catch (_) {
+    } catch (parseError) {
       // Silently handle parsing error
+      console.warn("Error parsing request body:", parseError)
     }
 
     // If no email provided, try to get the current user session
@@ -50,7 +51,8 @@ export async function POST(req: NextRequest) {
       { message: "Verification email sent successfully" },
       { status: 200 }
     )
-  } catch (_) {
+  } catch (error) {
+    console.error("Failed to resend verification email:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

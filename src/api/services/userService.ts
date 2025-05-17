@@ -15,7 +15,8 @@ export async function getUsers(): Promise<ApiResponse<User[]>> {
       data,
       status: 200,
     }
-  } catch (_err) {
+  } catch (error) {
+    console.error("Failed to fetch users:", error)
     return {
       error: "Failed to fetch users",
       status: 500,
@@ -49,7 +50,8 @@ export async function getUserById(
       data: data[0],
       status: 200,
     }
-  } catch (_err) {
+  } catch (error) {
+    console.error(`Failed to fetch user with ID ${id}:`, error)
     return {
       error: "Failed to fetch user",
       status: 500,
