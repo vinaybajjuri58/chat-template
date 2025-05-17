@@ -10,6 +10,13 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next") || "/dashboard"
   const returnJson = searchParams.get("json") === "true"
 
+  console.log("Email verification request received:", {
+    url: request.url,
+    token_hash: token_hash ? "exists" : "missing",
+    type,
+    next,
+  })
+
   const redirectTo = request.nextUrl.clone()
   redirectTo.pathname = next
   redirectTo.searchParams.delete("token_hash")

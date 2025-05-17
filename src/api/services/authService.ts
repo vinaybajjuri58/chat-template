@@ -192,7 +192,6 @@ export async function signup(
       })
 
     if (authError) {
-      console.error("Auth signup error:", authError)
       // Handle specific error cases
       if (authError.message.includes("already been registered")) {
         return {
@@ -216,18 +215,42 @@ export async function signup(
     }
 
     if (!authData?.user) {
-      console.error("Auth data missing user:", authData)
       return {
         error: "Failed to create user",
         status: 500,
       }
     }
 
-    // Don't auto-sign in after registration - require email verification first
-    console.log(
-      "User created, email verification required:",
-      authData.user.email
-    )
+    // Manually trigger the verification email since we're using the admin API
+    try {
+      const userEmail = authData.user.email
+      if (!userEmail) {
+        throw new Error("User email is missing")
+      }
+
+      // Use localhost for development if NEXT_PUBLIC_SITE_URL is not set
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+      console.log("Using site URL for redirects:", siteUrl)
+
+      const { error: emailError } = await supabase.auth.resend({
+        type: "signup",
+        email: userEmail,
+        options: {
+          emailRedirectTo: `${siteUrl}/auth/confirm`,
+        },
+      })
+
+      if (emailError) {
+        console.error("Error sending verification email:", emailError)
+        // Non-critical error, we still proceed with signup
+      } else {
+        console.log("Verification email sent successfully")
+      }
+    } catch (emailError) {
+      console.error("Exception sending verification email:", emailError)
+      // Non-critical error, we still proceed with signup
+    }
 
     // Use Supabase's built-in trigger to create the profile
     // The trigger we created will automatically create a profile record
