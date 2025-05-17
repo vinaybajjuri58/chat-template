@@ -214,7 +214,7 @@ export async function signup(
       // Use localhost for development if NEXT_PUBLIC_SITE_URL is not set
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL ||
-        "https://chat-template-nu.vercel.app/"
+        "https://chat-template-ten.vercel.app/"
 
       const { error } = await supabase.auth.resend({
         type: "signup",
