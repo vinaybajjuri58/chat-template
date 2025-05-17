@@ -106,3 +106,27 @@ export async function signup(
     }
   }
 }
+
+export async function signout(): Promise<ApiResponse<null>> {
+  const supabase = await createClient()
+  try {
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      return {
+        error: error.message,
+        status: 500,
+      }
+    }
+
+    return {
+      data: null,
+      status: 200,
+    }
+  } catch (error) {
+    return {
+      error: "Failed to sign out",
+      status: 500,
+    }
+  }
+}

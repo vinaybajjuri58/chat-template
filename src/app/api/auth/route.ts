@@ -1,4 +1,4 @@
-import { login, signup } from "@/api/services/authService"
+import { login, signup, signout } from "@/api/services/authService"
 import { LoginRequest, SignupRequest } from "@/api/utils/types"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -62,6 +62,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result.data, { status: result.status })
   }
 
-  // If action is neither login nor signup
+  // Handle signout request
+  if (action === "signout") {
+    const result = await signout()
+
+    if (result.error) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.status }
+      )
+    }
+
+    return NextResponse.json(
+      { message: "Successfully signed out" },
+      { status: 200 }
+    )
+  }
+
+  // If action is neither login nor signup nor signout
   return NextResponse.json({ error: "Invalid action" }, { status: 400 })
 }

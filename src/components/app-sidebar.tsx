@@ -2,7 +2,7 @@ import * as React from "react"
 import { GalleryVerticalEnd } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { SidebarOptInForm } from "@/components/sidebar-opt-in-form"
+import { SignOutButton } from "@/components/SignOutButton"
 import {
   Sidebar,
   SidebarContent,
@@ -169,8 +169,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <div className="p-1">
-          <SidebarOptInForm />
+        <div className="border-t p-4">
+          <SignOutButton className="w-full justify-start" />
         </div>
       </SidebarFooter>
       <SidebarRail />
