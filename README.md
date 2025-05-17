@@ -5,7 +5,7 @@ This is a fully functional chat application template built with Next.js, React, 
 ## Setup Instructions
 
 1. Clone this repository
-2. Install dependencies: `npm install`
+2. Install dependencies: `pnpm install`
 3. Create a `.env.local` file with the following variables:
    ```
    NEXT_PUBLIC_SUPABASE_URL=your-project-url
@@ -22,21 +22,42 @@ This is a fully functional chat application template built with Next.js, React, 
 
    You can find these in your Supabase dashboard under Project Settings > API.
 
-5. Run the development server: `npm run dev`
+5. Run the development server: `pnpm dev`
 6. Open [http://localhost:3000](http://localhost:3000) to see the app
+
+## Using pnpm
+
+This project uses [pnpm](https://pnpm.io/) as the package manager. Here are some common commands:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Start production server
+pnpm start
+
+# Run linting
+pnpm lint
+```
+
+If you don't have pnpm installed, you can install it using:
+
+```bash
+npm install -g pnpm
+```
 
 ## Getting Started
 
 First, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
