@@ -1,28 +1,35 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 
-// Define all protected routes
-export const protectedRoutes = ["/dashboard", "/users"]
-
-// Define public routes that should be accessible even when logged in
+// Public routes accessible to all users
 export const publicRoutes = ["/"]
 
-// Define auth routes (login/signup)
-export const authRoutes = ["/login", "/signup", "/reset-password"]
+// Protected routes that require authentication
+export const protectedRoutes = ["/dashboard"]
 
-// Helper to check if a path matches any of the routes in the routes array
-export function isPathInRoutes(path: string, routes: string[]): boolean {
-  return routes.some((route) => path === route || path.startsWith(`${route}/`))
-}
+// Auth routes (login/signup)
+export const authRoutes = ["/login", "/signup"]
 
-// Check if a path is a protected route
-export function isProtectedRoute(path: string): boolean {
-  return isPathInRoutes(path, protectedRoutes)
+// Helper to check if a path matches any routes in an array
+function isPathInRoutes(path: string, routes: string[]): boolean {
+  return routes.some((route) => {
+    // Exact match or path starts with route pattern and next char is / or end of string
+    return (
+      path === route ||
+      (path.startsWith(route) &&
+        (path.length === route.length || path[route.length] === "/"))
+    )
+  })
 }
 
 // Check if a path is an auth route
 export function isAuthRoute(path: string): boolean {
   return isPathInRoutes(path, authRoutes)
+}
+
+// Check if a path is a protected route requiring auth
+export function isProtectedRoute(path: string): boolean {
+  return isPathInRoutes(path, protectedRoutes)
 }
 
 // Check if a path is a public route
@@ -44,7 +51,7 @@ export async function requireAuth() {
   return user
 }
 
-// Server-side check that will redirect authenticated users away from auth pages
+// Server-side check to redirect authenticated users away from auth pages
 export async function redirectIfAuthenticated() {
   const supabase = await createClient()
   const {
@@ -54,6 +61,4 @@ export async function redirectIfAuthenticated() {
   if (user) {
     redirect("/dashboard")
   }
-
-  return user
 }

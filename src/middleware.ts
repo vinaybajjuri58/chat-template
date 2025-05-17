@@ -4,8 +4,7 @@ import { createMiddlewareClient } from "@/utils/supabase/middleware-client"
 
 export async function middleware(request: NextRequest) {
   // Get the current URL
-  const url = new URL(request.url)
-  const path = url.pathname
+  const path = request.nextUrl.pathname
 
   // Initialize response
   let response = NextResponse.next({
@@ -26,6 +25,7 @@ export async function middleware(request: NextRequest) {
   // Handle protected routes - redirect to login if not authenticated
   if (isProtectedRoute(path) && !isAuthenticated) {
     const redirectUrl = new URL("/login", request.url)
+    // Save the original URL as a redirect parameter
     redirectUrl.searchParams.set("redirect", path)
     return NextResponse.redirect(redirectUrl)
   }
@@ -45,7 +45,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - public files (including images)
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

@@ -240,9 +240,8 @@ export async function signup(
       return {
         data: {
           user: simpleUser,
-          // Use the session token from sign-in if available, otherwise use signup token
-          token:
-            signInData?.session?.access_token || authData.session?.access_token,
+          // Standardize to use the session from signin
+          token: signInData?.session?.access_token || undefined,
         },
         status: 201,
       }
@@ -257,9 +256,8 @@ export async function signup(
           email: profileData.email,
           createdAt: profileData.created_at,
         },
-        // Use the session token from sign-in if available, otherwise use signup token
-        token:
-          signInData?.session?.access_token || authData.session?.access_token,
+        // Standardize to use the session from signin
+        token: signInData?.session?.access_token || undefined,
       },
       status: 201,
     }
