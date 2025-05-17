@@ -19,14 +19,17 @@ The authentication system is organized as follows:
 
    - User submits signup form
    - `authService.signup()` creates the user in Supabase Auth
-   - User is automatically signed in after registration
+   - User is automatically signed in after registration, regardless of email verification status
    - A profile record is created in the `profiles` table
    - User is redirected to the dashboard
 
 2. **User Login**:
 
    - User submits login form
-   - `authService.login()` authenticates with Supabase
+   - `authService.login()` first checks if the email exists in the system
+   - If email is not found, user is prompted to sign up instead
+   - If email exists, authenticates with Supabase
+   - Authentication succeeds if the user exists, even if email is not verified
    - The system checks for a matching profile and creates one if missing
    - User is redirected to the dashboard
 

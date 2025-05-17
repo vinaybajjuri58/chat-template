@@ -17,7 +17,23 @@ export async function login(
   try {
     console.log("Login attempt for email:", credentials.email)
 
-    // Authenticate the user
+    // Check if the email exists in the profiles table
+    const { data: profileCheck, error: profileCheckError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", credentials.email)
+      .maybeSingle()
+
+    // If no profile found with this email, suggest signing up
+    if (!profileCheckError && !profileCheck) {
+      console.log("Email not found in the system:", credentials.email)
+      return {
+        error: "This email is not registered. Please sign up first.",
+        status: 404, // Not Found status code
+      }
+    }
+
+    // Authenticate the user - will work even if email is not verified
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
@@ -185,8 +201,9 @@ export async function signup(
       }
     }
 
-    // Regardless of email verification, sign in the user immediately
-    // This bypasses email verification requirement for login
+    // Always sign in the user immediately after signup
+    // This makes sure they're logged in regardless of email verification status
+    console.log("Signing in user immediately after signup")
     const { data: signInData, error: signInError } =
       await supabase.auth.signInWithPassword({
         email: userData.email,
@@ -195,7 +212,7 @@ export async function signup(
 
     if (signInError) {
       console.error("Auto sign-in after signup failed:", signInError)
-      // If auto sign-in fails, log the error but continue
+      // If auto sign-in fails, log the error but continue with the signup flow
       // The account was still created successfully
     } else {
       console.log("Auto sign-in successful, session established")
