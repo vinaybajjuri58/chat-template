@@ -29,10 +29,19 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common errors (unauthorized, forbidden, etc.)
     if (error.response) {
-      // Global error handling
+      // Only redirect for unauthorized errors if NOT on auth pages
       if (error.response.status === 401) {
-        // Handle unauthorized - e.g., redirect to login
-        window.location.href = "/login"
+        const currentPath = window.location.pathname
+        // Don't redirect if already on login page or other auth pages
+        if (
+          !currentPath.includes("/login") &&
+          !currentPath.includes("/signup")
+        ) {
+          console.log("Unauthorized access detected, redirecting to login")
+          window.location.href = "/login"
+        } else {
+          console.log("401 error on auth page, not redirecting")
+        }
       }
     }
     return Promise.reject(error)

@@ -52,7 +52,6 @@ export function SignupForm({
       // Navigate to dashboard on success
       router.push("/dashboard")
     } catch (err) {
-      // Show error message
       setError(
         err instanceof Error ? err.message : "Signup failed. Please try again."
       )
