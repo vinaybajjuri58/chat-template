@@ -1,4 +1,7 @@
-import { createClient } from "@/utils/supabase/server"
+"use client"
+
+import { useEffect, useState } from "react"
+import { User } from "@supabase/supabase-js"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,13 +11,30 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { SignOutButton } from "@/components/SignOutButton"
+import { EmailVerificationStatus } from "@/components/EmailVerificationStatus"
+import { createClient } from "@/utils/supabase/browser"
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  console.log({ user })
+export default function DashboardPage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        setUser(user)
+      } catch (error) {
+        console.error("Error loading user:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadUser()
+  }, [supabase.auth])
 
   return (
     <>
@@ -37,15 +57,25 @@ export default async function DashboardPage() {
       </header>
 
       <div className="flex flex-1 flex-col gap-4 p-4">
-        <h1 className="text-2xl font-semibold">Welcome, {user?.email}</h1>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <>
+            <h1 className="text-2xl font-semibold">Welcome, {user?.email}</h1>
 
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="bg-muted/50 aspect-video rounded-xl" />
-          <div className="bg-muted/50 aspect-video rounded-xl" />
-          <div className="bg-muted/50 aspect-video rounded-xl" />
-        </div>
+            <div className="max-w-2xl">
+              <EmailVerificationStatus user={user} />
+            </div>
 
-        <div className="bg-muted/50 min-h-[50vh] flex-1 rounded-xl md:min-h-min" />
+            <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+              <div className="bg-muted/50 aspect-video rounded-xl" />
+              <div className="bg-muted/50 aspect-video rounded-xl" />
+              <div className="bg-muted/50 aspect-video rounded-xl" />
+            </div>
+
+            <div className="bg-muted/50 min-h-[50vh] flex-1 rounded-xl md:min-h-min" />
+          </>
+        )}
       </div>
     </>
   )

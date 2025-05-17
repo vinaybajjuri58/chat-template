@@ -1,44 +1,45 @@
-import { createClient } from "@/utils/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/utils/supabase/server"
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
-    const body = await request.json()
-    const { email } = body
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 })
+    // Get the current user session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Send a new verification email
-    const { data, error } = await supabase.auth.resend({
+    // Resend the verification email to the user's email
+    if (!session.user.email) {
+      return NextResponse.json(
+        { error: "User email not found" },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await supabase.auth.resend({
       type: "signup",
-      email,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/verify-email`,
-      },
+      email: session.user.email,
     })
 
     if (error) {
       console.error("Error resending verification email:", error)
-      return NextResponse.json(
-        { error: error.message || "Failed to send verification email" },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json(
-      {
-        message: "Verification email sent successfully",
-        data: data,
-      },
+      { message: "Verification email sent successfully" },
       { status: 200 }
     )
   } catch (error) {
-    console.error("Unexpected error:", error)
+    console.error("Error in resend verification:", error)
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }
