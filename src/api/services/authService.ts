@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server"
+import { createAdminClient } from "@/utils/supabase/admin"
 import {
   ApiResponse,
   AuthResponse,
@@ -41,21 +42,110 @@ export async function login(
 
     if (error) {
       console.error("Login error from Supabase auth:", error)
+
+      // Check if the error is related to email verification
+      if (
+        error.message?.includes("Email not confirmed") ||
+        error.message?.includes("Email verification required")
+      ) {
+        console.log(
+          "User's email is not verified, using admin API to confirm email"
+        )
+
+        try {
+          // Create admin client to access admin API
+          const adminClient = createAdminClient()
+
+          // First, get the user by email to find their ID
+          const { data: userData } = await adminClient
+            .from("auth.users")
+            .select("id, email")
+            .eq("email", credentials.email)
+            .single()
+
+          if (!userData) {
+            console.error("Could not find user with email:", credentials.email)
+            return {
+              error: "Could not find your account. Please try again.",
+              status: 404,
+            }
+          }
+
+          // Now use the admin client to directly update the user's confirmation status
+          const { error: updateError } =
+            await adminClient.auth.admin.updateUserById(userData.id, {
+              email_confirm: true,
+            })
+
+          if (updateError) {
+            console.error("Failed to confirm email:", updateError)
+            return {
+              error:
+                "Failed to verify your email. Please try again or contact support.",
+              status: 500,
+            }
+          }
+
+          // Now try to sign in the user again - this should work since the email is now verified
+          console.log("Email confirmed, attempting login again")
+          const { data: signInData, error: signInError } =
+            await supabase.auth.signInWithPassword({
+              email: credentials.email,
+              password: credentials.password,
+            })
+
+          if (signInError) {
+            console.error(
+              "Still failed to login after email confirmation:",
+              signInError
+            )
+            return {
+              error: "Email verified but login still failed. Please try again.",
+              status: 401,
+            }
+          }
+
+          // Successfully signed in with now-verified email
+          return {
+            data: {
+              user: {
+                id: signInData.user.id,
+                name: signInData.user.user_metadata?.name || "",
+                email: signInData.user.email || "",
+                createdAt:
+                  signInData.user.created_at || new Date().toISOString(),
+              },
+              token: signInData.session?.access_token,
+            },
+            status: 200,
+          }
+        } catch (adminError) {
+          console.error("Admin API error:", adminError)
+          return {
+            error:
+              "Could not verify your email automatically. Please check your inbox for verification link.",
+            status: 500,
+          }
+        }
+      } else {
+        // For any other errors, return the error
+        return {
+          error: error.message,
+          status: 401,
+        }
+      }
+    }
+
+    // If no error and we have data, proceed normally
+    if (!data || !data.user) {
+      console.error("No user data available after auth attempt")
       return {
-        error: error.message,
+        error: "Authentication failed. Please check your credentials.",
         status: 401,
       }
     }
 
-    console.log("Supabase auth successful, user ID:", data.user?.id)
-
-    if (!data.user) {
-      console.error("No user returned from successful auth")
-      return {
-        error: "Authentication failed - user not found",
-        status: 401,
-      }
-    }
+    console.log("Supabase auth successful, user ID:", data.user.id)
 
     // Get user data from profiles table
     console.log("Fetching profile data for user ID:", data.user.id)
@@ -158,16 +248,16 @@ export async function signup(
     }
 
     // Register the user with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
+    const adminClient = createAdminClient()
+    const { data: authData, error: authError } =
+      await adminClient.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true, // Skip email verification
+        user_metadata: {
           name: userData.name, // Store name in user metadata
         },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-      },
-    })
+      })
 
     if (authError) {
       console.error("Auth signup error:", authError)
