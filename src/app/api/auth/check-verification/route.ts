@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Simply return verification status from the current session
     return NextResponse.json({
       isVerified: user.email_confirmed_at !== null,
       email: user.email,

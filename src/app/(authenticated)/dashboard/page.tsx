@@ -11,7 +11,6 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { SignOutButton } from "@/components/SignOutButton"
-import { EmailVerificationStatus } from "@/components/EmailVerificationStatus"
 import { createClient } from "@/utils/supabase/browser"
 
 export default function DashboardPage() {
@@ -25,6 +24,7 @@ export default function DashboardPage() {
         const {
           data: { user },
         } = await supabase.auth.getUser()
+        console.log("Dashboard loaded user:", user)
         setUser(user)
       } catch (error) {
         console.error("Error loading user:", error)
@@ -62,10 +62,6 @@ export default function DashboardPage() {
         ) : (
           <>
             <h1 className="text-2xl font-semibold">Welcome, {user?.email}</h1>
-
-            <div className="max-w-2xl">
-              <EmailVerificationStatus user={user} />
-            </div>
 
             <div className="grid auto-rows-min gap-4 md:grid-cols-3">
               <div className="bg-muted/50 aspect-video rounded-xl" />

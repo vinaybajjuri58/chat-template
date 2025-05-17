@@ -4,8 +4,18 @@ import { Button } from "@/components/ui/button"
 import { User } from "@supabase/supabase-js"
 import { useState } from "react"
 
+// Create a type that can handle either the standard User or our modified version
+type UserWithPossiblyNullEmail =
+  | User
+  | {
+      id: string
+      email?: string | null
+      email_confirmed_at: string | null
+      [key: string]: any
+    }
+
 interface EmailVerificationStatusProps {
-  user: User | null
+  user: UserWithPossiblyNullEmail | null
 }
 
 export function EmailVerificationStatus({
@@ -18,6 +28,13 @@ export function EmailVerificationStatus({
   }>({})
 
   const isVerified = user?.email_confirmed_at !== null
+
+  console.log("Email verification status:", {
+    user: user?.id,
+    email: user?.email,
+    isVerified,
+    email_confirmed_at: user?.email_confirmed_at,
+  })
 
   const handleResendVerification = async () => {
     if (!user?.email) return
@@ -70,11 +87,19 @@ export function EmailVerificationStatus({
     <div className="space-y-3">
       <Alert className="border-amber-200 bg-amber-50">
         <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-800">Email Not Verified</AlertTitle>
+        <AlertTitle className="text-amber-800 font-semibold">
+          Your Email Is Not Verified
+        </AlertTitle>
         <AlertDescription className="text-amber-700">
-          <p>
+          <p className="mb-2">
             Please check your inbox and click the verification link to verify
-            your email.
+            your email address. While you can use some features without
+            verification, a verified email ensures you have full access to all
+            platform features.
+          </p>
+          <p className="text-sm">
+            If you don't see the email, check your spam folder or use the resend
+            button below.
           </p>
         </AlertDescription>
       </Alert>

@@ -5,26 +5,43 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // Get the current user session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    // First try to get email from request body
+    let email: string | null = null
 
-    if (!session) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    try {
+      const body = await req.json()
+      email = body.email || null
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError)
     }
+
+    // If no email provided, try to get the current user session
+    if (!email) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session) {
+        return NextResponse.json(
+          { error: "No email provided and not authenticated" },
+          { status: 400 }
+        )
+      }
+
+      email = session.user.email || null
+    }
+
+    // Ensure we have an email to send verification to
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 })
+    }
+
+    console.log("Resending verification email to:", email)
 
     // Resend the verification email to the user's email
-    if (!session.user.email) {
-      return NextResponse.json(
-        { error: "User email not found" },
-        { status: 400 }
-      )
-    }
-
     const { error } = await supabase.auth.resend({
       type: "signup",
-      email: session.user.email,
+      email: email,
     })
 
     if (error) {

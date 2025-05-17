@@ -34,7 +34,7 @@ export async function login(
       }
     }
 
-    // Authenticate the user - will work even if email is not verified
+    // Authenticate the user - Supabase allows login even with unverified emails by default
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
@@ -46,86 +46,16 @@ export async function login(
       // Check if the error is related to email verification
       if (
         error.message?.includes("Email not confirmed") ||
-        error.message?.includes("Email verification required")
+        error.message?.includes("Email verification required") ||
+        error.code === "email_not_confirmed"
       ) {
-        console.log(
-          "User's email is not verified, using admin API to confirm email"
-        )
+        console.log("User email not verified:", credentials.email)
 
-        try {
-          // Create admin client to access admin API
-          const adminClient = createAdminClient()
-
-          // First, get the user by email to find their ID
-          const { data: userData } = await adminClient
-            .from("auth.users")
-            .select("id, email")
-            .eq("email", credentials.email)
-            .single()
-
-          if (!userData) {
-            console.error("Could not find user with email:", credentials.email)
-            return {
-              error: "Could not find your account. Please try again.",
-              status: 404,
-            }
-          }
-
-          // Now use the admin client to directly update the user's confirmation status
-          const { error: updateError } =
-            await adminClient.auth.admin.updateUserById(userData.id, {
-              email_confirm: true,
-            })
-
-          if (updateError) {
-            console.error("Failed to confirm email:", updateError)
-            return {
-              error:
-                "Failed to verify your email. Please try again or contact support.",
-              status: 500,
-            }
-          }
-
-          // Now try to sign in the user again - this should work since the email is now verified
-          console.log("Email confirmed, attempting login again")
-          const { data: signInData, error: signInError } =
-            await supabase.auth.signInWithPassword({
-              email: credentials.email,
-              password: credentials.password,
-            })
-
-          if (signInError) {
-            console.error(
-              "Still failed to login after email confirmation:",
-              signInError
-            )
-            return {
-              error: "Email verified but login still failed. Please try again.",
-              status: 401,
-            }
-          }
-
-          // Successfully signed in with now-verified email
-          return {
-            data: {
-              user: {
-                id: signInData.user.id,
-                name: signInData.user.user_metadata?.name || "",
-                email: signInData.user.email || "",
-                createdAt:
-                  signInData.user.created_at || new Date().toISOString(),
-              },
-              token: signInData.session?.access_token,
-            },
-            status: 200,
-          }
-        } catch (adminError) {
-          console.error("Admin API error:", adminError)
-          return {
-            error:
-              "Could not verify your email automatically. Please check your inbox for verification link.",
-            status: 500,
-          }
+        return {
+          error:
+            "Please verify your email before logging in. Check your inbox for a verification link or request a new one.",
+          status: 403,
+          emailVerificationRequired: true,
         }
       } else {
         // For any other errors, return the error
@@ -189,6 +119,7 @@ export async function login(
               createdAt: new Date().toISOString(),
             },
             token: data.session?.access_token,
+            emailVerified: false,
           },
           status: 200,
         }
@@ -210,6 +141,7 @@ export async function login(
           createdAt: userData.created_at,
         },
         token: data.session?.access_token,
+        emailVerified: true,
       },
       status: 200,
     }
@@ -253,7 +185,7 @@ export async function signup(
       await adminClient.auth.admin.createUser({
         email: userData.email,
         password: userData.password,
-        email_confirm: true, // Skip email verification
+        email_confirm: false, // Email verification required
         user_metadata: {
           name: userData.name, // Store name in user metadata
         },
@@ -291,22 +223,11 @@ export async function signup(
       }
     }
 
-    // Always sign in the user immediately after signup
-    // This makes sure they're logged in regardless of email verification status
-    console.log("Signing in user immediately after signup")
-    const { data: signInData, error: signInError } =
-      await supabase.auth.signInWithPassword({
-        email: userData.email,
-        password: userData.password,
-      })
-
-    if (signInError) {
-      console.error("Auto sign-in after signup failed:", signInError)
-      // If auto sign-in fails, log the error but continue with the signup flow
-      // The account was still created successfully
-    } else {
-      console.log("Auto sign-in successful, session established")
-    }
+    // Don't auto-sign in after registration - require email verification first
+    console.log(
+      "User created, email verification required:",
+      authData.user.email
+    )
 
     // Use Supabase's built-in trigger to create the profile
     // The trigger we created will automatically create a profile record
@@ -327,44 +248,17 @@ export async function signup(
       // Non-critical error, we can still proceed
     }
 
-    // Fetch the profile to return
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", authData.user.id)
-      .single()
-
-    if (profileError) {
-      console.error("Profile fetch error:", profileError)
-      // Create a simplified user object if we can't fetch the profile
-      const simpleUser: User = {
-        id: authData.user.id,
-        name: userData.name,
-        email: userData.email,
-        createdAt: new Date().toISOString(),
-      }
-
-      return {
-        data: {
-          user: simpleUser,
-          // Standardize to use the session from signin
-          token: signInData?.session?.access_token || undefined,
-        },
-        status: 201,
-      }
-    }
-
-    // Return the profile data
+    // Return success but without a token - they need to verify email first
     return {
       data: {
         user: {
-          id: profileData.id,
-          name: profileData.name || userData.name,
-          email: profileData.email,
-          createdAt: profileData.created_at,
+          id: authData.user.id,
+          name: userData.name,
+          email: userData.email,
+          createdAt: new Date().toISOString(),
         },
-        // Standardize to use the session from signin
-        token: signInData?.session?.access_token || undefined,
+        // No token - must verify email first
+        emailVerified: false,
       },
       status: 201,
     }

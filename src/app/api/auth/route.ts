@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       const result = await login(credentials)
 
       if (result.error) {
+        console.log("Login failed with error:", result.error)
         return NextResponse.json(
           { error: result.error },
           { status: result.status }
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
 
       // Sanitize data to ensure it's JSON serializable
       const sanitizedData = sanitizeForJson(result.data)
+      console.log("Login success, returning data:", sanitizedData)
       return NextResponse.json(sanitizedData, { status: result.status })
     }
 

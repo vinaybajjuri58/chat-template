@@ -53,13 +53,13 @@ export function SignupForm({
 
       // Show success message
       setSuccess(
-        "Account created successfully! Please check your email to verify your account."
+        "Account created! Please check your email and click the verification link before logging in. You won't be able to log in until your email is verified."
       )
 
-      // Delay before redirecting to dashboard
+      // Delay before redirecting to login page instead of dashboard
       setTimeout(() => {
-        router.push("/dashboard")
-      }, 3000)
+        router.push("/login")
+      }, 5000)
     } catch (err) {
       // postToApi already extracts the error message
       setError(

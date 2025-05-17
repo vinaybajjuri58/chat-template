@@ -11,6 +11,7 @@ export type ApiResponse<T> = {
   data?: T
   error?: string
   status: number
+  emailVerificationRequired?: boolean
 }
 
 export type RouteContext = {
@@ -33,4 +34,5 @@ export type SignupRequest = {
 export type AuthResponse = {
   user: User
   token?: string
+  emailVerified?: boolean
 }
