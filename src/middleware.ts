@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Initialize response
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },

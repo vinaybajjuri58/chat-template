@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     try {
       const body = await req.json()
       email = body.email || null
-    } catch (parseError) {
+    } catch (_) {
       // Silently handle parsing error
     }
 
@@ -37,20 +37,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Resend the verification email to the user's email
-    const { error } = await supabase.auth.resend({
+    const { error: resendError } = await supabase.auth.resend({
       type: "signup",
       email: email,
     })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (resendError) {
+      return NextResponse.json({ error: resendError.message }, { status: 500 })
     }
 
     return NextResponse.json(
       { message: "Verification email sent successfully" },
       { status: 200 }
     )
-  } catch (error) {
+  } catch (_) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

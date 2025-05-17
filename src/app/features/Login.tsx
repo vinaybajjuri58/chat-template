@@ -126,7 +126,7 @@ export function LoginForm({
                     check your inbox for a verification link.
                   </p>
                   <p className="text-sm mt-1">
-                    If you don't see the email, check your spam folder or
+                    If you don&apos;t see the email, check your spam folder or
                     request a new verification email.
                   </p>
                 </AlertDescription>

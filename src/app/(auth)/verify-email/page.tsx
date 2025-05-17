@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useEffect, useState, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Card,
   CardHeader,
@@ -17,14 +17,13 @@ import Link from "next/link"
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   )
   const [message, setMessage] = useState("Verifying your email...")
   const [email, setEmail] = useState("")
 
-  const verifyEmail = async () => {
+  const verifyEmail = useCallback(async () => {
     try {
       const token_hash = searchParams.get("token_hash")
       const type = searchParams.get("type")
@@ -66,11 +65,11 @@ export default function VerifyEmailPage() {
         "An error occurred during verification. Please try again later."
       )
     }
-  }
+  }, [searchParams])
 
   useEffect(() => {
     verifyEmail()
-  }, [])
+  }, [verifyEmail])
 
   const handleResendVerification = async () => {
     try {
@@ -97,8 +96,8 @@ export default function VerifyEmailPage() {
             {status === "loading"
               ? "Verifying your email address..."
               : status === "success"
-              ? "Your email has been verified"
-              : "Verification failed"}
+                ? "Your email has been verified"
+                : "Verification failed"}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-6">

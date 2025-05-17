@@ -56,7 +56,7 @@ export default function VerificationErrorPage() {
         <CardHeader>
           <CardTitle className="text-xl">Email Verification Failed</CardTitle>
           <CardDescription>
-            We couldn't verify your email address
+            We couldn&apos;t verify your email address
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-6">

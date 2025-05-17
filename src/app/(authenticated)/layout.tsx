@@ -9,7 +9,7 @@ export default async function AuthenticatedLayout({
   children: React.ReactNode
 }>) {
   // Server-side auth check with redirect
-  const user = await requireAuth()
+  await requireAuth()
 
   return (
     <SidebarProvider>

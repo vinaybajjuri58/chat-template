@@ -11,7 +11,7 @@ type UserWithPossiblyNullEmail =
       id: string
       email?: string | null
       email_confirmed_at: string | null
-      [key: string]: any
+      [key: string]: unknown
     }
 
 interface EmailVerificationStatusProps {
@@ -91,8 +91,8 @@ export function EmailVerificationStatus({
             platform features.
           </p>
           <p className="text-sm">
-            If you don't see the email, check your spam folder or use the resend
-            button below.
+            If you don&apos;t see the email, check your spam folder or use the
+            resend button below.
           </p>
         </AlertDescription>
       </Alert>

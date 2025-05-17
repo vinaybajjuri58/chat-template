@@ -25,7 +25,7 @@ export default function DashboardPage() {
           data: { user },
         } = await supabase.auth.getUser()
         setUser(user)
-      } catch (error) {
+      } catch {
         // Silently handle error
       } finally {
         setLoading(false)

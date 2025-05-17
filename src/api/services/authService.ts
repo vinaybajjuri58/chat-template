@@ -5,7 +5,6 @@ import {
   AuthResponse,
   LoginRequest,
   SignupRequest,
-  User,
 } from "../utils/types"
 
 // Helper function to wait for a specified time
@@ -129,7 +128,8 @@ export async function login(
       },
       status: 200,
     }
-  } catch (error) {
+  } catch (_err) {
+    // Rename error to err to avoid shadowing
     return {
       error: "Authentication failed",
       status: 500,
@@ -215,7 +215,7 @@ export async function signup(
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 
-      const { error: emailError } = await supabase.auth.resend({
+      const { error } = await supabase.auth.resend({
         type: "signup",
         email: userEmail,
         options: {
@@ -223,11 +223,13 @@ export async function signup(
         },
       })
 
-      if (emailError) {
+      if (error) {
         // Non-critical error, we still proceed with signup
+        console.log("Email verification send error:", error.message)
       }
-    } catch (emailError) {
+    } catch (_err) {
       // Non-critical error, we still proceed with signup
+      console.log("Email verification error:", _err)
     }
 
     // Use Supabase's built-in trigger to create the profile
@@ -262,9 +264,9 @@ export async function signup(
       },
       status: 201,
     }
-  } catch (error) {
+  } catch (_err) {
     const errorMessage =
-      error instanceof Error ? error.message : "Registration failed"
+      _err instanceof Error ? _err.message : "Registration failed"
 
     // Check for common error patterns
     if (
@@ -288,11 +290,11 @@ export async function signup(
 export async function signout(): Promise<ApiResponse<null>> {
   const supabase = await createClient()
   try {
-    const { error } = await supabase.auth.signOut()
+    const { error: signOutError } = await supabase.auth.signOut()
 
-    if (error) {
+    if (signOutError) {
       return {
-        error: error.message,
+        error: signOutError.message,
         status: 500,
       }
     }
@@ -301,7 +303,7 @@ export async function signout(): Promise<ApiResponse<null>> {
       data: null,
       status: 200,
     }
-  } catch (error) {
+  } catch (_err) {
     return {
       error: "Failed to sign out",
       status: 500,
