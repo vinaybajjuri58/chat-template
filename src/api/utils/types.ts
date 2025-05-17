@@ -4,7 +4,7 @@ export type User = {
   id: string
   name: string
   email: string
-  createdAt: Date
+  createdAt: string // ISO date string format
 }
 
 export type ApiResponse<T> = {

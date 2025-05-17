@@ -71,35 +71,79 @@ export async function signup(
       }
     }
 
-    // Create user profile in users table
-    const { data: profileData, error: profileError } = await supabase
-      .from("users")
-      .insert([
-        {
+    // Use ISO string format for Date which is JSON serializable
+    const currentDate = new Date().toISOString()
+
+    try {
+      // Create user profile in users table
+      const { data: profileData, error: profileError } = await supabase
+        .from("users")
+        .insert([
+          {
+            id: authData.user.id,
+            name: userData.name,
+            email: userData.email,
+            createdAt: currentDate,
+          },
+        ])
+        .select()
+        .single()
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError)
+        return {
+          error: profileError.message,
+          status: 500,
+        }
+      }
+
+      // If profileData is null but no error, create a simplified user object
+      if (!profileData) {
+        console.log("No profile data returned, using simplified user object")
+        const simpleUser: User = {
           id: authData.user.id,
           name: userData.name,
           email: userData.email,
-          createdAt: new Date(),
-        },
-      ])
-      .select()
-      .single()
+          createdAt: currentDate,
+        }
 
-    if (profileError) {
+        return {
+          data: {
+            user: simpleUser,
+            token: authData.session?.access_token,
+          },
+          status: 201,
+        }
+      }
+
+      // Return the profile data
       return {
-        error: profileError.message,
-        status: 500,
+        data: {
+          user: profileData as User,
+          token: authData.session?.access_token,
+        },
+        status: 201,
+      }
+    } catch (profileError) {
+      console.error("Profile creation error:", profileError)
+      // If there's an error creating the profile, still return the auth user
+      const simpleUser: User = {
+        id: authData.user.id,
+        name: userData.name,
+        email: userData.email,
+        createdAt: currentDate,
+      }
+
+      return {
+        data: {
+          user: simpleUser,
+          token: authData.session?.access_token,
+        },
+        status: 201,
       }
     }
-
-    return {
-      data: {
-        user: profileData as User,
-        token: authData.session?.access_token,
-      },
-      status: 201,
-    }
   } catch (error) {
+    console.error("Signup error:", error)
     return {
       error: "Registration failed",
       status: 500,
