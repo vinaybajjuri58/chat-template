@@ -29,13 +29,6 @@ export function EmailVerificationStatus({
 
   const isVerified = user?.email_confirmed_at !== null
 
-  console.log("Email verification status:", {
-    user: user?.id,
-    email: user?.email,
-    isVerified,
-    email_confirmed_at: user?.email_confirmed_at,
-  })
-
   const handleResendVerification = async () => {
     if (!user?.email) return
 

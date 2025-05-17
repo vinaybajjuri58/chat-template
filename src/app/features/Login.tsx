@@ -50,11 +50,8 @@ export function LoginForm({
       })
 
       // If we got here, login was successful
-      console.log("Login successful, redirecting to:", redirectPath)
       router.push(redirectPath)
     } catch (err) {
-      console.error("Login error:", err)
-
       // Check if this is a verification required error
       if (
         err instanceof Error &&

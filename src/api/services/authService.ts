@@ -16,8 +16,6 @@ export async function login(
 ): Promise<ApiResponse<AuthResponse>> {
   const supabase = await createClient()
   try {
-    console.log("Login attempt for email:", credentials.email)
-
     // Check if the email exists in the profiles table
     const { data: profileCheck, error: profileCheckError } = await supabase
       .from("profiles")
@@ -27,7 +25,6 @@ export async function login(
 
     // If no profile found with this email, suggest signing up
     if (!profileCheckError && !profileCheck) {
-      console.log("Email not found in the system:", credentials.email)
       return {
         error: "This email is not registered. Please sign up first.",
         status: 404, // Not Found status code
@@ -41,16 +38,12 @@ export async function login(
     })
 
     if (error) {
-      console.error("Login error from Supabase auth:", error)
-
       // Check if the error is related to email verification
       if (
         error.message?.includes("Email not confirmed") ||
         error.message?.includes("Email verification required") ||
         error.code === "email_not_confirmed"
       ) {
-        console.log("User email not verified:", credentials.email)
-
         return {
           error:
             "Please verify your email before logging in. Check your inbox for a verification link or request a new one.",
@@ -68,17 +61,13 @@ export async function login(
 
     // If no error and we have data, proceed normally
     if (!data || !data.user) {
-      console.error("No user data available after auth attempt")
       return {
         error: "Authentication failed. Please check your credentials.",
         status: 401,
       }
     }
 
-    console.log("Supabase auth successful, user ID:", data.user.id)
-
     // Get user data from profiles table
-    console.log("Fetching profile data for user ID:", data.user.id)
     const { data: userData, error: userError } = await supabase
       .from("profiles")
       .select("*")
@@ -87,11 +76,7 @@ export async function login(
 
     // If profile not found, create one
     if (userError) {
-      console.error("User data fetch error:", userError)
-
       if (userError.code === "PGRST116") {
-        console.log("Profile not found, creating one")
-
         // Create a basic profile for the user
         const { error: insertError } = await supabase.from("profiles").insert({
           id: data.user.id,
@@ -102,7 +87,6 @@ export async function login(
         })
 
         if (insertError) {
-          console.error("Failed to create profile during login:", insertError)
           return {
             error: "Failed to setup user profile",
             status: 500,
@@ -146,7 +130,6 @@ export async function login(
       status: 200,
     }
   } catch (error) {
-    console.error("Login exception:", error)
     return {
       error: "Authentication failed",
       status: 500,
@@ -231,7 +214,6 @@ export async function signup(
       // Use localhost for development if NEXT_PUBLIC_SITE_URL is not set
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-      console.log("Using site URL for redirects:", siteUrl)
 
       const { error: emailError } = await supabase.auth.resend({
         type: "signup",
@@ -242,13 +224,9 @@ export async function signup(
       })
 
       if (emailError) {
-        console.error("Error sending verification email:", emailError)
         // Non-critical error, we still proceed with signup
-      } else {
-        console.log("Verification email sent successfully")
       }
     } catch (emailError) {
-      console.error("Exception sending verification email:", emailError)
       // Non-critical error, we still proceed with signup
     }
 
@@ -267,7 +245,6 @@ export async function signup(
       .eq("id", authData.user.id)
 
     if (updateError) {
-      console.error("Profile update error:", updateError)
       // Non-critical error, we can still proceed
     }
 
@@ -286,7 +263,6 @@ export async function signup(
       status: 201,
     }
   } catch (error) {
-    console.error("Signup exception:", error)
     const errorMessage =
       error instanceof Error ? error.message : "Registration failed"
 
@@ -315,7 +291,6 @@ export async function signout(): Promise<ApiResponse<null>> {
     const { error } = await supabase.auth.signOut()
 
     if (error) {
-      console.error("Signout error:", error)
       return {
         error: error.message,
         status: 500,
@@ -327,7 +302,6 @@ export async function signout(): Promise<ApiResponse<null>> {
       status: 200,
     }
   } catch (error) {
-    console.error("Signout exception:", error)
     return {
       error: "Failed to sign out",
       status: 500,

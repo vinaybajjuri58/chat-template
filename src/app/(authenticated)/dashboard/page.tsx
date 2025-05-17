@@ -24,10 +24,9 @@ export default function DashboardPage() {
         const {
           data: { user },
         } = await supabase.auth.getUser()
-        console.log("Dashboard loaded user:", user)
         setUser(user)
       } catch (error) {
-        console.error("Error loading user:", error)
+        // Silently handle error
       } finally {
         setLoading(false)
       }
