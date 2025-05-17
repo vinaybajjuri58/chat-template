@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/utils/supabase/server"
+import { Footer } from "@/components/Footer"
 
 // This layout is for public pages like home, about, etc.
 export default async function PublicLayout({
@@ -23,6 +24,12 @@ export default async function PublicLayout({
             YourApp
           </Link>
           <nav className="flex items-center gap-4">
+            <Link href="/about" className="text-sm hover:underline">
+              About
+            </Link>
+            <Link href="/contact" className="text-sm hover:underline">
+              Contact
+            </Link>
             {isAuthenticated ? (
               <Button asChild size="sm">
                 <Link href="/dashboard">Dashboard</Link>
@@ -45,11 +52,7 @@ export default async function PublicLayout({
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="border-t py-6 bg-gray-50">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-          © {new Date().getFullYear()} YourApp. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
