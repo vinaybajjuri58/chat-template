@@ -7,6 +7,28 @@ import {
   TMessageRole,
   TDatabase,
 } from "@/types"
+import OpenAI from "openai"
+import { ChatCompletionMessageParam } from "openai/resources"
+import { APIError, RateLimitError } from "openai/error"
+
+// Initialize OpenAI client with proper error handling
+const getOpenAIClient = () => {
+  const apiKey = process.env.OPENAI_API_KEY
+
+  if (!apiKey) {
+    console.error("OPENAI_API_KEY is not set in environment variables")
+    return null
+  }
+
+  return new OpenAI({
+    apiKey,
+    timeout: parseInt(process.env.OPENAI_TIMEOUT || "30000", 10), // Default 30s timeout
+    maxRetries: parseInt(process.env.OPENAI_MAX_RETRIES || "3", 10), // Default 3 retries
+  })
+}
+
+// Define a fallback model in case environment variable isn't set
+const DEFAULT_MODEL = "gpt-3.5-turbo"
 
 /**
  * Creates a new chat with the given title
@@ -207,7 +229,7 @@ export async function getChatById(
 }
 
 /**
- * Sends a user message to a specific chat
+ * Sends a user message to a specific chat and generates AI response
  */
 export async function sendMessage(
   chatId: string,
@@ -244,8 +266,8 @@ export async function sendMessage(
       }
     }
 
-    // Insert the message
-    const { data: messageData, error: messageError } = await supabase
+    // Insert user message
+    const { data: userMessageData, error: messageError } = await supabase
       .from("messages")
       .insert({
         chatId,
@@ -255,40 +277,141 @@ export async function sendMessage(
       .select("*")
       .single()
 
-    if (messageError) {
+    if (messageError || !userMessageData) {
       return {
-        error: messageError.message,
+        error: messageError?.message || "Failed to send message",
         status: 500,
       }
     }
 
-    if (!messageData) {
-      return {
-        error: "Failed to send message",
-        status: 500,
+    try {
+      // Initialize OpenAI client
+      const openai = getOpenAIClient()
+      if (!openai) {
+        throw new Error("OpenAI client initialization failed. Check API key.")
       }
+
+      // Get chat history for context
+      const { data: chatHistory, error: historyError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("chatId", chatId)
+        .order("createdAt", { ascending: true })
+        .limit(50) // Limit chat history to last 50 messages for token efficiency
+
+      // If chat history isn't available, just use the current message
+      const messageHistory = chatHistory || [
+        {
+          role: TMessageRole.User,
+          content: message,
+          id: userMessageData.id,
+          chatId,
+          createdAt: userMessageData.createdAt,
+        },
+      ]
+
+      if (historyError) {
+        console.warn(
+          "Failed to retrieve chat history, using only current message:",
+          historyError
+        )
+      }
+
+      // Get model from environment variables or use default
+      const model = process.env.OPENAI_MODEL || DEFAULT_MODEL
+
+      // Generate AI response with specific error handling for OpenAI errors
+      try {
+        const completion = await openai.chat.completions.create({
+          model,
+          messages: [
+            {
+              role: "system",
+              content:
+                process.env.OPENAI_SYSTEM_PROMPT ||
+                "You are a helpful assistant.",
+            } as ChatCompletionMessageParam,
+            ...messageHistory.map(
+              (msg) =>
+                ({
+                  role: msg.role === TMessageRole.User ? "user" : "assistant",
+                  content: msg.content,
+                }) as ChatCompletionMessageParam
+            ),
+          ],
+          temperature: parseFloat(process.env.OPENAI_TEMPERATURE || "0.7"),
+          max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS || "2000", 10),
+        })
+
+        const aiResponse = completion.choices[0]?.message?.content
+
+        if (!aiResponse) {
+          throw new Error("Empty response from AI model")
+        }
+
+        // Save AI response
+        const { data: aiMessageData, error: aiMessageError } = await supabase
+          .from("messages")
+          .insert({
+            chatId,
+            content: aiResponse,
+            role: TMessageRole.Assistant,
+          })
+          .select("*")
+          .single()
+
+        if (aiMessageError || !aiMessageData) {
+          throw new Error(
+            aiMessageError?.message || "Failed to save AI response"
+          )
+        }
+      } catch (err) {
+        // Typed error handling specific to OpenAI
+        if (err instanceof APIError) {
+          console.error(`OpenAI API Error: ${err.status} - ${err.name}`)
+
+          if (err instanceof RateLimitError) {
+            // Handle rate limiting specifically
+            console.error(
+              "Rate limit exceeded, consider upgrading your OpenAI plan"
+            )
+          }
+
+          // Log headers for debugging
+          console.error(`Headers: ${JSON.stringify(err.headers)}`)
+        }
+
+        // Re-throw to be caught by outer catch
+        throw err
+      }
+
+      // Update chat timestamp
+      await supabase
+        .from("chats")
+        .update({ updatedAt: new Date().toISOString() })
+        .eq("id", chatId)
+    } catch (aiError) {
+      console.error("AI processing error:", aiError)
+
+      // Still return the user message since it was saved
+      // This allows the client to show the user message even if AI failed
     }
 
-    // Update the chat's updatedAt timestamp
-    await supabase
-      .from("chats")
-      .update({ updatedAt: new Date().toISOString() })
-      .eq("id", chatId)
-
+    // Return the user message (AI message will be fetched separately if needed)
     return {
       data: {
-        id: messageData.id,
-        content: messageData.content,
-        role: messageData.role,
-        createdAt: messageData.createdAt,
-        chatId: messageData.chatId,
+        id: userMessageData.id,
+        content: userMessageData.content,
+        role: userMessageData.role,
+        createdAt: userMessageData.createdAt,
+        chatId: userMessageData.chatId,
       },
       status: 201,
     }
   } catch (error) {
     console.error("Send message error:", error)
     return {
-      error: "Failed to send message",
+      error: "Failed to process message",
       status: 500,
     }
   }
