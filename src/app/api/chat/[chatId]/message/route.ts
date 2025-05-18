@@ -7,13 +7,13 @@ import * as chatService from "@/api/services/chatService"
 // GET /api/chat/[chatId]/message - Get messages for a chat
 export async function GET(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  context: { params: { chatId: string } }
 ) {
   try {
     // Validate URL parameters
     try {
       // Validate chat ID format
-      ChatSchemas.getChatMessages.parse(params)
+      ChatSchemas.getChatMessages.parse(context.params)
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -27,7 +27,7 @@ export async function GET(
       }
     }
 
-    const result = await chatService.getChatMessages(params.chatId)
+    const result = await chatService.getChatMessages(context.params.chatId)
 
     if ("error" in result) {
       return NextResponse.json(
@@ -59,9 +59,19 @@ export const POST = withValidation(
   async (
     req: NextRequest,
     data: { message: string },
-    context: { params: { chatId: string } }
+    ctx?: { params?: Record<string, string | string[]> }
   ) => {
-    const { chatId } = await context.params
+    if (!ctx?.params?.chatId) {
+      return NextResponse.json(
+        {
+          error: "Chat ID is required",
+          status: "error",
+        },
+        { status: 400 }
+      )
+    }
+
+    const chatId = ctx.params.chatId as string
 
     try {
       ChatSchemas.getChatMessages.parse({ chatId })

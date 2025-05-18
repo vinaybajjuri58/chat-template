@@ -2,21 +2,21 @@ import { getChatById, getChatMessages } from "@/api/services/chatService"
 import { NextRequest, NextResponse } from "next/server"
 
 type Params = {
-  params: Promise<{
+  params: {
     chatId: string
-  }>
+  }
 }
 
-export async function GET(request: NextRequest, { params }: Params) {
-  // Properly await the params object before accessing chatId
-  const resolvedParams = await params
-  const chatId = resolvedParams.chatId
+export async function GET(
+  request: NextRequest,
+  context: { params: { chatId: string } }
+) {
+  const chatId = context.params.chatId
 
   if (!chatId) {
     return NextResponse.json({ error: "Chat ID is required" }, { status: 400 })
   }
 
-  // Check if we want just the messages
   const { searchParams } = new URL(request.url)
   const messagesOnly = searchParams.get("messagesOnly") === "true"
 

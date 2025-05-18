@@ -6,12 +6,12 @@ import * as chatService from "@/api/services/chatService"
 // GET /api/chat/[chatId] - Get a specific chat by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  context: { params: { chatId: string } }
 ) {
   try {
     // Validate chat ID
     try {
-      ChatSchemas.getChatById.parse(params)
+      ChatSchemas.getChatById.parse(context.params)
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     // Fetch the chat
-    const result = await chatService.getChatById(params.chatId)
+    const result = await chatService.getChatById(context.params.chatId)
 
     if ("error" in result) {
       return NextResponse.json(
@@ -51,12 +51,12 @@ export async function GET(
 // DELETE /api/chat/[chatId] - Delete a chat
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  context: { params: { chatId: string } }
 ) {
   try {
     // Validate chat ID
     try {
-      ChatSchemas.getChatById.parse(params)
+      ChatSchemas.getChatById.parse(context.params)
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
