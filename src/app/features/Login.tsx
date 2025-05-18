@@ -115,17 +115,17 @@ export function LoginForm({
         <CardContent>
           {verificationRequired ? (
             <div className="space-y-4">
-              <Alert className="border-amber-200 bg-amber-50">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-800">
+              <Alert className="border-accent bg-accent/10">
+                <AlertCircle className="h-4 w-4 text-primary" />
+                <AlertTitle className="font-semibold">
                   Email Verification Required
                 </AlertTitle>
-                <AlertDescription className="text-amber-700">
+                <AlertDescription>
                   <p>
                     You need to verify your email before logging in. Please
                     check your inbox for a verification link.
                   </p>
-                  <p className="text-sm mt-1">
+                  <p className="text-sm mt-1 text-muted-foreground">
                     If you don&apos;t see the email, check your spam folder or
                     request a new verification email.
                   </p>
@@ -133,7 +133,7 @@ export function LoginForm({
               </Alert>
 
               {resendStatus && (
-                <div className="p-3 text-sm bg-green-100 text-green-700 rounded-md">
+                <div className="p-3 text-sm bg-primary/10 text-primary rounded-md">
                   {resendStatus}
                 </div>
               )}
@@ -141,7 +141,7 @@ export function LoginForm({
               <Button
                 variant="outline"
                 size="sm"
-                className="self-start border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800"
+                className="self-start"
                 onClick={handleResendVerification}
                 disabled={isLoading}
               >
@@ -152,7 +152,7 @@ export function LoginForm({
             <form onSubmit={handleLogin}>
               <div className="flex flex-col gap-6">
                 {error && (
-                  <div className="p-3 text-sm bg-red-100 text-red-700 rounded-md">
+                  <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-md">
                     {error}
                   </div>
                 )}

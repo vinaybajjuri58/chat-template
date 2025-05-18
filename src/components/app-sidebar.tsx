@@ -3,6 +3,7 @@ import { GalleryVerticalEnd } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { SignOutButton } from "@/components/SignOutButton"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import {
   Sidebar,
   SidebarContent,
@@ -170,6 +171,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <div className="border-t p-4">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium">Theme</span>
+            <ThemeToggle />
+          </div>
           <SignOutButton className="w-full justify-start" />
         </div>
       </SidebarFooter>
