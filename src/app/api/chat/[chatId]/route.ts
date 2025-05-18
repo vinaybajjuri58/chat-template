@@ -1,17 +1,18 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { z } from "zod"
 import { ChatSchemas } from "@/utils/validations"
 import * as chatService from "@/api/services/chatService"
 
 // GET /api/chat/[chatId] - Get a specific chat by ID
 export async function GET(
-  req: NextRequest,
-  context: { params: { chatId: string } }
+  request: Request,
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
+    const resolvedParams = await params
     // Validate chat ID
     try {
-      ChatSchemas.getChatById.parse(context.params)
+      ChatSchemas.getChatById.parse(resolvedParams)
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -26,7 +27,7 @@ export async function GET(
     }
 
     // Fetch the chat
-    const result = await chatService.getChatById(context.params.chatId)
+    const result = await chatService.getChatById(resolvedParams.chatId)
 
     if ("error" in result) {
       return NextResponse.json(
@@ -50,13 +51,14 @@ export async function GET(
 
 // DELETE /api/chat/[chatId] - Delete a chat
 export async function DELETE(
-  req: NextRequest,
-  context: { params: { chatId: string } }
+  request: Request,
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
+    const resolvedParams = await params
     // Validate chat ID
     try {
-      ChatSchemas.getChatById.parse(context.params)
+      ChatSchemas.getChatById.parse(resolvedParams)
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(

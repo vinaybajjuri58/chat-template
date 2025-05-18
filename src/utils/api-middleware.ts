@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { formatZodError } from "@/utils/validations"
 
-type RequestContext = {
-  params?: Record<string, string | string[]>
+// Updated to match Next.js 15 route context structure
+type RouteContext = {
+  params: Promise<Record<string, string | string[]>>
 }
 
 /**
@@ -16,13 +17,13 @@ export function withValidation<T>(
   handler: (
     req: NextRequest,
     data: T,
-    ctx?: RequestContext
+    ctx?: RouteContext
   ) => Promise<NextResponse>,
   schema: z.ZodType<T>
 ) {
   return async (
     req: NextRequest,
-    ctx?: RequestContext
+    ctx?: RouteContext
   ): Promise<NextResponse> => {
     try {
       // Parse and validate the request body
