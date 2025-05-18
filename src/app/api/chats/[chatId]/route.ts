@@ -1,12 +1,6 @@
 import { getChatById, getChatMessages } from "@/api/services/chatService"
 import { NextRequest, NextResponse } from "next/server"
 
-type Params = {
-  params: {
-    chatId: string
-  }
-}
-
 export async function GET(
   request: NextRequest,
   context: { params: { chatId: string } }
