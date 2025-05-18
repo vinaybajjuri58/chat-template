@@ -1,18 +1,18 @@
 import { createClient } from "@/utils/supabase/server"
 import { createAdminClient } from "@/utils/supabase/admin"
 import {
-  ApiResponse,
-  AuthResponse,
-  LoginRequest,
-  SignupRequest,
+  TApiResponse,
+  TAuthResponse,
+  TLoginRequest,
+  TSignupRequest,
 } from "../utils/types"
 
 // Helper function to wait for a specified time
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export async function login(
-  credentials: LoginRequest
-): Promise<ApiResponse<AuthResponse>> {
+  credentials: TLoginRequest
+): Promise<TApiResponse<TAuthResponse>> {
   const supabase = await createClient()
   try {
     // Check if the email exists in the profiles table
@@ -138,8 +138,8 @@ export async function login(
 }
 
 export async function signup(
-  userData: SignupRequest
-): Promise<ApiResponse<AuthResponse>> {
+  userData: TSignupRequest
+): Promise<TApiResponse<TAuthResponse>> {
   const supabase = await createClient()
 
   try {
@@ -289,7 +289,7 @@ export async function signup(
   }
 }
 
-export async function signout(): Promise<ApiResponse<null>> {
+export async function signout(): Promise<TApiResponse<null>> {
   const supabase = await createClient()
   try {
     const { error: signOutError } = await supabase.auth.signOut()

@@ -1,25 +1,25 @@
 import { login, signup, signout } from "@/api/services/authService"
-import { LoginRequest, SignupRequest } from "@/api/utils/types"
+import { TLoginRequest, TSignupRequest } from "@/api/utils/types"
 import { NextRequest, NextResponse } from "next/server"
 
 // Define a type for values that can be JSON serialized
-type JSONValue =
+type TJSONValue =
   | string
   | number
   | boolean
   | null
   | Date
-  | JSONValue[]
-  | { [key: string]: JSONValue }
+  | TJSONValue[]
+  | { [key: string]: TJSONValue }
 
 // Helper function to ensure values are JSON serializable
-function sanitizeForJson(data: unknown): JSONValue {
+function sanitizeForJson(data: unknown): TJSONValue {
   if (data === null || data === undefined) {
     return null
   }
 
   if (typeof data !== "object") {
-    return data as JSONValue
+    return data as TJSONValue
   }
 
   // Handle Date objects
@@ -33,7 +33,7 @@ function sanitizeForJson(data: unknown): JSONValue {
   }
 
   // Handle plain objects
-  const result: Record<string, JSONValue> = {}
+  const result: Record<string, TJSONValue> = {}
   for (const key in data as Record<string, unknown>) {
     if (Object.prototype.hasOwnProperty.call(data, key)) {
       result[key] = sanitizeForJson((data as Record<string, unknown>)[key])
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Handle login request
     if (action === "login") {
-      const credentials = data as LoginRequest
+      const credentials = data as TLoginRequest
 
       // Validate request
       if (!credentials.email || !credentials.password) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     // Handle signup request
     if (action === "signup") {
-      const userData = data as SignupRequest
+      const userData = data as TSignupRequest
 
       // Validate request
       if (!userData.name || !userData.email || !userData.password) {

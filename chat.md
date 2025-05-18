@@ -292,7 +292,7 @@ Add these types to your application for TypeScript support:
 
 ```typescript
 // Types for the chat feature
-export interface Chat {
+type TChat = {
   id: string
   user_id: string
   title: string
@@ -300,7 +300,7 @@ export interface Chat {
   updated_at: string
 }
 
-export interface ChatMessage {
+type TChatMessage = {
   id: string
   chat_id: string
   content: string
@@ -309,23 +309,23 @@ export interface ChatMessage {
 }
 
 // Request types for API endpoints
-export interface CreateChatRequest {
+type TCreateChatRequest = {
   title: string
 }
 
-export interface SendMessageRequest {
+type TSendMessageRequest = {
   chat_id: string
   message: string
 }
 
 // Response types
-export interface ChatResponse {
-  chat: Chat
-  messages: ChatMessage[]
+type TChatResponse = {
+  chat: TChat
+  messages: TChatMessage[]
 }
 
-export interface ChatListResponse {
-  chats: Chat[]
+type TChatListResponse = {
+  chats: TChat[]
 }
 ```
 

@@ -1,38 +1,38 @@
 // Backend type definitions
 
-export type User = {
+export type TUser = {
   id: string
   name: string
   email: string
   createdAt: string // ISO date string format
 }
 
-export type ApiResponse<T> = {
+export type TApiResponse<T> = {
   data?: T
   error?: string
   status: number
   emailVerificationRequired?: boolean
 }
 
-export type RouteContext = {
+export type TRouteContext = {
   params: {
     id: string
   }
 }
 
-export type LoginRequest = {
+export type TLoginRequest = {
   email: string
   password: string
 }
 
-export type SignupRequest = {
+export type TSignupRequest = {
   name: string
   email: string
   password: string
 }
 
-export type AuthResponse = {
-  user: User
+export type TAuthResponse = {
+  user: TUser
   token?: string
   emailVerified?: boolean
 }

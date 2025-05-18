@@ -14,13 +14,13 @@ type UserWithPossiblyNullEmail =
       [key: string]: unknown
     }
 
-interface EmailVerificationStatusProps {
+type TEmailVerificationStatusProps = {
   user: UserWithPossiblyNullEmail | null
 }
 
 export function EmailVerificationStatus({
   user,
-}: EmailVerificationStatusProps) {
+}: TEmailVerificationStatusProps) {
   const [isResending, setIsResending] = useState(false)
   const [resendStatus, setResendStatus] = useState<{
     success?: string
