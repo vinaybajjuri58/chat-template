@@ -35,7 +35,7 @@ export type TDatabase = {
         Insert: Omit<TChat, "id" | "createdAt" | "updatedAt">
         Update: Partial<Omit<TChat, "id" | "createdAt">>
       }
-      messages: {
+      chat_messages: {
         Row: TMessage
         Insert: Omit<TMessage, "id" | "createdAt">
         Update: Partial<Omit<TMessage, "id" | "createdAt" | "chatId">>
@@ -62,4 +62,5 @@ export type TTables<T extends keyof TDatabase["public"]["Tables"]> =
   TDatabase["public"]["Tables"][T]["Row"]
 
 export type TNewChat = TDatabase["public"]["Tables"]["chats"]["Insert"]
-export type TNewMessage = TDatabase["public"]["Tables"]["messages"]["Insert"]
+export type TNewMessage =
+  TDatabase["public"]["Tables"]["chat_messages"]["Insert"]

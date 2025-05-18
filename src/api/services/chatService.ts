@@ -207,7 +207,7 @@ export async function getChatById(
 
     // Fetch messages separately
     const { data: messagesData, error: messagesError } = await supabase
-      .from("messages")
+      .from("chat_messages")
       .select("*")
       .eq("chat_id", chatId)
       .order("created_at", { ascending: true })
@@ -264,11 +264,14 @@ export async function sendMessage(
     } = await supabase.auth.getUser()
 
     if (userError || !user) {
+      console.log("Authentication error:", userError)
       return {
         error: "Authentication required",
         status: 401,
       }
     }
+
+    console.log("Authenticated user:", user.id)
 
     // Verify the chat exists and belongs to the user - using snake_case
     const { data: chatData, error: chatError } = await supabase
@@ -279,71 +282,123 @@ export async function sendMessage(
       .single()
 
     if (chatError || !chatData) {
+      console.log("Chat verification error:", chatError)
       return {
         error: "Chat not found or access denied",
         status: 404,
       }
     }
 
-    // Insert user message - using snake_case
-    const { data: userMessageData, error: messageError } = await supabase
-      .from("messages")
-      .insert({
-        chat_id: chatId,
-        content: message,
-        role: TMessageRole.User,
-      })
-      .select("*")
-      .single()
+    console.log("Chat verified, inserting user message")
 
-    if (messageError || !userMessageData) {
-      return {
-        error: messageError?.message || "Failed to send message",
-        status: 500,
-      }
-    }
+    // Insert user message - using snake_case
+    console.log("Inserting message with data:", {
+      chat_id: chatId,
+      role: TMessageRole.User,
+    })
 
     try {
-      // Initialize OpenAI client
-      const openai = getOpenAIClient()
-      if (!openai) {
-        throw new Error("OpenAI client initialization failed. Check API key.")
-      }
+      // Create a timestamp for consistency
+      const now = new Date().toISOString()
 
-      // Get chat history for context - using snake_case
-      const { data: chatHistory, error: historyError } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("chat_id", chatId)
-        .order("created_at", { ascending: true })
-        .limit(50) // Limit chat history to last 50 messages for token efficiency
-
-      // If chat history isn't available, just use the current message
-      const messageHistory = chatHistory || [
-        {
-          role: TMessageRole.User,
-          content: message,
-          id: userMessageData.id,
+      const { data: userMessageData, error: messageError } = await supabase
+        .from("chat_messages")
+        .insert({
           chat_id: chatId,
-          created_at: userMessageData.created_at,
-        },
-      ]
+          content: message,
+          role: TMessageRole.User,
+          // Add any other required fields that might be missing
+          created_at: now,
+          // Remove updated_at as it doesn't exist in the table
+        })
+        .select("*")
+        .single()
 
-      if (historyError) {
-        console.warn(
-          "Failed to retrieve chat history, using only current message:",
-          historyError
-        )
+      if (messageError) {
+        console.log("Message insertion error details:", {
+          code: messageError.code,
+          message: messageError.message,
+          details: messageError.details,
+          hint: messageError.hint,
+        })
+        return {
+          error: messageError?.message || "Failed to send message",
+          status: 500,
+        }
       }
 
-      // Get model from environment variables or use default
-      const model = process.env.OPENAI_MODEL || DEFAULT_MODEL
+      if (!userMessageData) {
+        console.log("No user message data returned after insertion")
+        return {
+          error: "Failed to save message to database",
+          status: 500,
+        }
+      }
 
-      // Generate AI response with specific error handling for OpenAI errors
+      console.log("User message saved successfully:", {
+        id: userMessageData.id,
+        role: userMessageData.role,
+      })
+
       try {
-        const completion = await openai.chat.completions.create({
-          model,
-          messages: [
+        // Initialize OpenAI client
+        const openai = getOpenAIClient()
+        if (!openai) {
+          console.log("Failed to initialize OpenAI client")
+          console.warn(
+            "OpenAI client not available. Skipping AI response generation."
+          )
+
+          // Return the user message without attempting AI response
+          return {
+            data: {
+              id: userMessageData.id,
+              content: userMessageData.content,
+              role: userMessageData.role,
+              createdAt: userMessageData.created_at,
+              chatId: userMessageData.chat_id,
+            },
+            status: 201,
+          }
+        }
+
+        console.log("OpenAI client initialized")
+
+        // Get chat history for context - using snake_case
+        const { data: chatHistory, error: historyError } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("chat_id", chatId)
+          .order("created_at", { ascending: true })
+          .limit(50) // Limit chat history to last 50 messages for token efficiency
+
+        // If chat history isn't available, just use the current message
+        const messageHistory = chatHistory || [
+          {
+            role: TMessageRole.User,
+            content: message,
+            id: userMessageData.id,
+            chat_id: chatId,
+            created_at: userMessageData.created_at,
+          },
+        ]
+
+        if (historyError) {
+          console.warn(
+            "Failed to retrieve chat history, using only current message:",
+            historyError
+          )
+        }
+
+        // Get model from environment variables or use default
+        const model = process.env.OPENAI_MODEL || DEFAULT_MODEL
+        console.log("Using model:", model)
+
+        // Generate AI response with specific error handling for OpenAI errors
+        try {
+          console.log("Preparing to call OpenAI API")
+
+          const messagesForAPI = [
             {
               role: "system",
               content:
@@ -357,75 +412,110 @@ export async function sendMessage(
                   content: msg.content,
                 }) as ChatCompletionMessageParam
             ),
-          ],
-          temperature: parseFloat(process.env.OPENAI_TEMPERATURE || "0.7"),
-          max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS || "2000", 10),
-        })
+          ]
 
-        const aiResponse = completion.choices[0]?.message?.content
+          console.log("Message history length:", messagesForAPI.length)
 
-        if (!aiResponse) {
-          throw new Error("Empty response from AI model")
-        }
-
-        // Save AI response - using snake_case
-        const { data: aiMessageData, error: aiMessageError } = await supabase
-          .from("messages")
-          .insert({
-            chat_id: chatId,
-            content: aiResponse,
-            role: TMessageRole.Assistant,
+          const completion = await openai.chat.completions.create({
+            model,
+            messages: messagesForAPI,
+            temperature: parseFloat(process.env.OPENAI_TEMPERATURE || "0.7"),
+            max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS || "2000", 10),
           })
-          .select("*")
-          .single()
 
-        if (aiMessageError || !aiMessageData) {
-          throw new Error(
-            aiMessageError?.message || "Failed to save AI response"
-          )
-        }
-      } catch (err) {
-        // Typed error handling specific to OpenAI
-        if (err instanceof APIError) {
-          console.error(`OpenAI API Error: ${err.status} - ${err.name}`)
+          console.log("OpenAI API call successful")
 
-          if (err instanceof RateLimitError) {
-            // Handle rate limiting specifically
-            console.error(
-              "Rate limit exceeded, consider upgrading your OpenAI plan"
-            )
+          const aiResponse = completion.choices[0]?.message?.content
+
+          if (!aiResponse) {
+            console.log("Empty AI response received")
+            throw new Error("Empty response from AI model")
           }
 
-          // Log headers for debugging
-          console.error(`Headers: ${JSON.stringify(err.headers)}`)
+          console.log("AI response received, length:", aiResponse.length)
+
+          // Save AI response - using snake_case
+          const now = new Date().toISOString() // Timestamp for consistency
+
+          const { data: aiMessageData, error: aiMessageError } = await supabase
+            .from("chat_messages")
+            .insert({
+              chat_id: chatId,
+              content: aiResponse,
+              role: TMessageRole.Assistant,
+              created_at: now,
+            })
+            .select("*")
+            .single()
+
+          if (aiMessageError || !aiMessageData) {
+            throw new Error(
+              aiMessageError?.message || "Failed to save AI response"
+            )
+          }
+        } catch (err) {
+          // Typed error handling specific to OpenAI
+          if (err instanceof APIError) {
+            console.error(`OpenAI API Error: ${err.status} - ${err.name}`)
+
+            if (err instanceof RateLimitError) {
+              // Handle rate limiting specifically
+              console.error(
+                "Rate limit exceeded, consider upgrading your OpenAI plan"
+              )
+            }
+
+            // Log headers for debugging
+            console.error(`Headers: ${JSON.stringify(err.headers)}`)
+          }
+
+          console.error("AI response generation failed:", err)
+
+          // Instead of re-throwing, return the user message
+          console.warn(
+            "Returning just the user message due to OpenAI API error"
+          )
+          return {
+            data: {
+              id: userMessageData.id,
+              content: userMessageData.content,
+              role: userMessageData.role,
+              createdAt: userMessageData.created_at,
+              chatId: userMessageData.chat_id,
+            },
+            status: 201,
+          }
         }
 
-        // Re-throw to be caught by outer catch
-        throw err
+        // Update chat timestamp - using snake_case
+        await supabase
+          .from("chats")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", chatId)
+      } catch (aiError) {
+        console.error("AI processing error:", aiError)
+
+        // Still return the user message since it was saved
+        // This allows the client to show the user message even if AI failed
       }
 
-      // Update chat timestamp - using snake_case
-      await supabase
-        .from("chats")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", chatId)
-    } catch (aiError) {
-      console.error("AI processing error:", aiError)
-
-      // Still return the user message since it was saved
-      // This allows the client to show the user message even if AI failed
-    }
-
-    // Return the user message (AI message will be fetched separately if needed)
-    return {
-      data: {
-        id: userMessageData.id,
-        content: userMessageData.content,
-        role: userMessageData.role,
-        createdAt: userMessageData.created_at,
-        chatId: userMessageData.chat_id,
-      },
-      status: 201,
+      // Return the user message (AI message will be fetched separately if needed)
+      return {
+        data: {
+          id: userMessageData.id,
+          content: userMessageData.content,
+          role: userMessageData.role,
+          createdAt: userMessageData.created_at,
+          chatId: userMessageData.chat_id,
+        },
+        status: 201,
+      }
+    } catch (error) {
+      console.error("Send message error:", error)
+      return {
+        error: "Failed to process message",
+        status: 500,
+      }
     }
   } catch (error) {
     console.error("Send message error:", error)
@@ -475,7 +565,7 @@ export async function getChatMessages(
 
     // Get all messages for this chat - using snake_case
     const { data, error } = await supabase
-      .from("messages")
+      .from("chat_messages")
       .select("*")
       .eq("chat_id", chatId)
       .order("created_at", { ascending: true })
