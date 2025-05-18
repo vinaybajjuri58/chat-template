@@ -405,3 +405,58 @@ Use `suppressHydrationWarning` only when:
 - You've verified that the mismatches are limited to the expected cases (theme changes, time-based content, etc.)
 
 For our theme implementation, `suppressHydrationWarning` is appropriate because the visual difference during hydration is momentary and expected. The structural HTML remains the same; only CSS classes change.
+
+## Direct DOM Manipulation in ThemeProvider
+
+You might notice this code in our ThemeProvider:
+
+```jsx
+// Effect to apply theme class to HTML element
+useEffect(() => {
+  const root = window.document.documentElement
+  root.classList.remove("light", "dark")
+  root.classList.add(theme)
+  localStorage.setItem("ui-theme", theme)
+}, [theme])
+```
+
+### Is This a React Anti-Pattern?
+
+In React and Next.js applications, directly manipulating the DOM (like `window.document.documentElement.classList`) is generally discouraged because:
+
+1. It bypasses React's virtual DOM and reconciliation process
+2. It can lead to inconsistencies between React's state and the actual DOM
+3. It could interfere with React's hydration in server-rendered applications
+
+### Why It's Acceptable for Theme Implementation
+
+Despite these concerns, direct DOM manipulation is appropriate for theme implementation because:
+
+1. **Root Element Access**: The HTML element (`<html>`) is outside of React's component tree and not directly controllable through normal React props or state.
+
+2. **CSS Selector Requirements**: For theme switching to work with CSS, we need the `.dark` class specifically on the `<html>` or `<body>` element so that CSS selectors like `.dark .some-element` can work throughout the application.
+
+3. **Official Approach**: This pattern is actually recommended in the Tailwind documentation and Next.js examples for implementing dark mode.
+
+4. **Contained Effect**: The direct DOM manipulation is isolated to a single effect with a clear purpose and doesn't spread throughout the application.
+
+### Alternatives Considered
+
+Other approaches to theme implementation have drawbacks:
+
+1. **Context-only approach**: Passing theme values via React context without modifying the DOM would require every styled component to check the theme context explicitly.
+
+2. **CSS-in-JS solution**: Would increase bundle size and potentially impact performance compared to CSS variables.
+
+3. **Cookies-based approach**: Could work for SSR but adds complexity and still requires some client-side DOM manipulation.
+
+### Best Practices When Manipulating the DOM
+
+If you need to directly manipulate the DOM in a React application:
+
+1. **Isolate the manipulation** in specific, clearly-purposed effects
+2. **Document why** the direct manipulation is necessary
+3. **Consider alternatives** first
+4. **Test thoroughly** across different rendering scenarios (SSR, CSR, hydration)
+
+In this specific case for theme implementation, the direct DOM manipulation is the recommended approach despite being generally discouraged in React applications.
