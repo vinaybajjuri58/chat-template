@@ -329,3 +329,79 @@ You might wonder: "Where do we import `tailwind.config.ts`? How does it actually
    - No JavaScript re-rendering is needed for the color changes
 
 This is why the system is both performant and elegant - the theme switch only changes CSS classes and variables, not the actual structure of your components.
+
+## Understanding `suppressHydrationWarning`
+
+In our `layout.tsx` file, you might notice the following attribute on the HTML element:
+
+```tsx
+<html lang="en" suppressHydrationWarning>
+  {/* ... */}
+</html>
+```
+
+### What is Hydration?
+
+In Next.js and React applications:
+
+1. **Server-Side Rendering (SSR)**: The initial HTML is generated on the server
+2. **Hydration**: In the browser, React "hydrates" this HTML by attaching event listeners and creating the component tree
+
+### The Hydration Mismatch Problem with Themes
+
+When using themes, we face a potential issue:
+
+1. The server renders the page with a default theme (usually light mode)
+2. If the user previously selected dark mode (stored in localStorage), the ThemeProvider will switch to dark mode during client-side hydration
+3. This creates a **mismatch** between the server-rendered HTML and the client-side React tree
+
+When React detects this mismatch, it typically shows a warning:
+
+```
+Warning: Text content did not match. Server: "Light Theme Content" Client: "Dark Theme Content"
+```
+
+### How `suppressHydrationWarning` Helps
+
+The `suppressHydrationWarning` attribute tells React to:
+
+1. Ignore hydration mismatches specifically for this element and its children
+2. Still perform hydration, but without logging warnings to the console
+3. Allow the client-side rendered content to take precedence once hydration is complete
+
+This is necessary for theme implementations because:
+
+- The server cannot know the user's theme preference (it's stored in browser localStorage)
+- The theme switch happens immediately during hydration
+- The mismatch is expected and intentional
+
+### Important: What It Does NOT Suppress
+
+It's critical to understand that `suppressHydrationWarning` **only** suppresses hydration mismatch warnings. It does not:
+
+- Hide JavaScript errors or exceptions
+- Suppress React prop validation warnings
+- Mask actual bugs in your components
+- Hide performance issues or other console warnings
+
+Hydration mismatches are specifically the warnings that occur when the server-rendered HTML doesn't match what React would render on the client during the first render pass.
+
+### Potential Risks
+
+Using `suppressHydrationWarning` inappropriately can hide actual problems:
+
+1. **Masking Real Issues**: If you have genuine UI inconsistencies between server and client rendering (not just theme differences), `suppressHydrationWarning` will hide these warnings that might indicate bugs.
+
+2. **SEO and Accessibility Impacts**: If content differs significantly between server and client, search engines might index different content than users see, and screen readers might announce incorrect content during page load.
+
+3. **Layout Shifts**: Significant differences between server and client rendering can cause layout shifts as components update, creating a poor user experience.
+
+### When to Use It
+
+Use `suppressHydrationWarning` only when:
+
+- The mismatch is intentional and unavoidable (like with themes)
+- The differences won't negatively impact user experience
+- You've verified that the mismatches are limited to the expected cases (theme changes, time-based content, etc.)
+
+For our theme implementation, `suppressHydrationWarning` is appropriate because the visual difference during hydration is momentary and expected. The structural HTML remains the same; only CSS classes change.
