@@ -7,13 +7,14 @@ import * as chatService from "@/api/services/chatService"
 // GET /api/chat/[chatId]/message - Get messages for a chat
 export async function GET(
   req: NextRequest,
-  context: { params: { chatId: string } }
+  context: { params: Promise<{ chatId: string }> }
 ) {
   try {
+    const params = await context.params
     // Validate URL parameters
     try {
       // Validate chat ID format
-      ChatSchemas.getChatMessages.parse(context.params)
+      ChatSchemas.getChatMessages.parse(params)
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -27,7 +28,7 @@ export async function GET(
       }
     }
 
-    const result = await chatService.getChatMessages(context.params.chatId)
+    const result = await chatService.getChatMessages(params.chatId)
 
     if ("error" in result) {
       return NextResponse.json(

@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(
   request: NextRequest,
-  context: { params: { chatId: string } }
+  context: { params: Promise<{ chatId: string }> }
 ) {
-  const chatId = context.params.chatId
+  const { chatId } = await context.params
 
   if (!chatId) {
     return NextResponse.json({ error: "Chat ID is required" }, { status: 400 })
