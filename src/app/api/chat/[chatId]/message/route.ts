@@ -25,6 +25,7 @@ export async function GET(
           { status: 400 }
         )
       }
+      throw error // Re-throw if not a ZodError
     }
 
     const result = await chatService.getChatMessages(params.chatId)
@@ -87,13 +88,14 @@ export async function POST(
           { status: 400 }
         )
       }
+      throw error // Re-throw if not a ZodError
     }
 
     // Parse and validate request body
     let body
     try {
       body = await req.json()
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         {
           error: "Invalid JSON in request body",
@@ -117,6 +119,7 @@ export async function POST(
           { status: 400 }
         )
       }
+      throw error // Re-throw if not a ZodError
     }
 
     const result = await chatService.sendMessage(chatId, body.message)
