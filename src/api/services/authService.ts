@@ -5,7 +5,7 @@ import {
   TAuthResponse,
   TLoginRequest,
   TSignupRequest,
-} from "../utils/types"
+} from "@/types"
 
 // Helper function to wait for a specified time
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

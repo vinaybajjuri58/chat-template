@@ -1,5 +1,5 @@
 import { login, signup, signout } from "@/api/services/authService"
-import { TLoginRequest, TSignupRequest } from "@/api/utils/types"
+import { TLoginRequest, TSignupRequest } from "@/types/api"
 import { NextRequest, NextResponse } from "next/server"
 
 // Define a type for values that can be JSON serialized
