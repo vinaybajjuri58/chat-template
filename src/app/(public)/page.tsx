@@ -6,7 +6,7 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-20">
       <div className="max-w-3xl mx-auto text-center">
         <h1 className="text-4xl font-bold mb-6">Template for authentication</h1>
-        <p className="text-xl text-gray-600 mb-8">
+        <p className="text-xl text-muted-foreground mb-8">
           A modern nextJS application with authentication and API routes
         </p>
         <div className="flex justify-center gap-4">

@@ -34,7 +34,7 @@ export default function UsersPage() {
 
       <div className="flex flex-1 flex-col gap-4 p-4">
         {loading && <p>Loading users...</p>}
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-destructive">{error}</p>}
 
         {!loading && !error && (
           <div className="grid gap-4">
@@ -44,7 +44,7 @@ export default function UsersPage() {
               users.map((user) => (
                 <div key={user.id} className="p-4 border rounded-lg shadow-sm">
                   <h2 className="font-medium">{user.name}</h2>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               ))
             )}

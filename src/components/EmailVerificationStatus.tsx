@@ -66,10 +66,10 @@ export function EmailVerificationStatus({
 
   if (isVerified) {
     return (
-      <Alert className="border-green-200 bg-green-50">
-        <CheckCircle2 className="h-4 w-4 text-green-600" />
-        <AlertTitle className="text-green-800">Email Verified</AlertTitle>
-        <AlertDescription className="text-green-700">
+      <Alert className="border-primary/20 bg-primary/5">
+        <CheckCircle2 className="h-4 w-4 text-primary" />
+        <AlertTitle className="font-semibold">Email Verified</AlertTitle>
+        <AlertDescription>
           Your email address has been verified.
         </AlertDescription>
       </Alert>
@@ -78,19 +78,19 @@ export function EmailVerificationStatus({
 
   return (
     <div className="space-y-3">
-      <Alert className="border-amber-200 bg-amber-50">
-        <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-800 font-semibold">
+      <Alert className="border-accent bg-accent/10">
+        <AlertCircle className="h-4 w-4 text-primary" />
+        <AlertTitle className="font-semibold">
           Your Email Is Not Verified
         </AlertTitle>
-        <AlertDescription className="text-amber-700">
+        <AlertDescription>
           <p className="mb-2">
             Please check your inbox and click the verification link to verify
             your email address. While you can use some features without
             verification, a verified email ensures you have full access to all
             platform features.
           </p>
-          <p className="text-sm">
+          <p className="text-sm text-muted-foreground">
             If you don&apos;t see the email, check your spam folder or use the
             resend button below.
           </p>
@@ -103,17 +103,17 @@ export function EmailVerificationStatus({
           size="sm"
           onClick={handleResendVerification}
           disabled={isResending}
-          className="self-start border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 max-w-xs"
+          className="self-start"
         >
           {isResending ? "Sending..." : "Resend Verification Email"}
         </Button>
 
         {resendStatus.success && (
-          <p className="mt-2 text-sm text-green-600">{resendStatus.success}</p>
+          <p className="mt-2 text-sm text-primary">{resendStatus.success}</p>
         )}
 
         {resendStatus.error && (
-          <p className="mt-2 text-sm text-red-600">{resendStatus.error}</p>
+          <p className="mt-2 text-sm text-destructive">{resendStatus.error}</p>
         )}
       </div>
     </div>

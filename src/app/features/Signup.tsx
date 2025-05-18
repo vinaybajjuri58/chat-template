@@ -83,12 +83,12 @@ export function SignupForm({
           <form onSubmit={handleSignup}>
             <div className="flex flex-col gap-6">
               {error && (
-                <div className="p-3 text-sm bg-red-100 text-red-700 rounded-md">
+                <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-md">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="p-3 text-sm bg-green-100 text-green-700 rounded-md">
+                <div className="p-3 text-sm bg-primary/10 text-primary rounded-md">
                   {success}
                 </div>
               )}
@@ -126,7 +126,7 @@ export function SignupForm({
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Password must be at least 6 characters
                 </p>
               </div>

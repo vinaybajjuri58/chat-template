@@ -103,16 +103,16 @@ export default function VerifyEmailPage() {
         <CardContent className="flex flex-col items-center justify-center py-6">
           {status === "loading" && (
             <div className="flex flex-col items-center">
-              <Loader2 className="h-16 w-16 text-blue-500 animate-spin mb-4" />
+              <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
               <p className="text-center">{message}</p>
             </div>
           )}
 
           {status === "success" && (
             <div className="flex flex-col items-center">
-              <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-              <p className="text-center text-green-700 mb-4">{message}</p>
-              <p className="text-sm text-gray-500">
+              <CheckCircle className="h-16 w-16 text-primary mb-4" />
+              <p className="text-center mb-4">{message}</p>
+              <p className="text-sm text-muted-foreground">
                 You can now use all the features of our application.
               </p>
             </div>
@@ -120,8 +120,8 @@ export default function VerifyEmailPage() {
 
           {status === "error" && (
             <div className="flex flex-col items-center">
-              <XCircle className="h-16 w-16 text-red-500 mb-4" />
-              <p className="text-center text-red-700 mb-4">{message}</p>
+              <XCircle className="h-16 w-16 text-destructive mb-4" />
+              <p className="text-center mb-4">{message}</p>
               {email && (
                 <Button
                   variant="outline"

@@ -2,8 +2,8 @@
 
 export function Footer() {
   return (
-    <footer className="border-t py-6 bg-gray-50">
-      <div className="container mx-auto px-4 text-center text-sm text-gray-500">
+    <footer className="border-t py-6 bg-background">
+      <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
         YourApp. All rights reserved.
       </div>
     </footer>

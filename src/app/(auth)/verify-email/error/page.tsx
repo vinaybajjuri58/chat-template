@@ -61,7 +61,7 @@ export default function VerificationErrorPage() {
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-6">
           <div className="flex flex-col items-center mb-6">
-            <XCircle className="h-16 w-16 text-red-500 mb-4" />
+            <XCircle className="h-16 w-16 text-destructive mb-4" />
             <p className="text-center mb-4">
               The verification link may have expired or is invalid. Please
               request a new verification email.
@@ -88,8 +88,8 @@ export default function VerificationErrorPage() {
               <div
                 className={`p-3 text-sm rounded-md ${
                   messageType === "success"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                    ? "bg-primary/10 text-primary"
+                    : "bg-destructive/10 text-destructive"
                 }`}
               >
                 {message}

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/utils/supabase/server"
 import { Footer } from "@/components/Footer"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 // This layout is for public pages like home, about, etc.
 export default async function PublicLayout({
@@ -24,6 +25,7 @@ export default async function PublicLayout({
             YourApp
           </Link>
           <nav className="flex items-center gap-4">
+            <ThemeToggle />
             {isAuthenticated ? (
               <Button asChild size="sm">
                 <Link href="/dashboard">Dashboard</Link>
