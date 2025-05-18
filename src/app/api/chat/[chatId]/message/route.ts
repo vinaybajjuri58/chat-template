@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { withValidation } from "@/utils/api-middleware"
 import { ChatSchemas } from "@/utils/validations"
 import * as chatService from "@/api/services/chatService"
 
@@ -55,14 +54,16 @@ const messageOnlySchema = z.object({
   message: ChatSchemas.sendMessage.shape.message,
 })
 
-// POST /api/chat/[chatId]/message - Send a message
-export const POST = withValidation(
-  async (
-    req: NextRequest,
-    data: { message: string },
-    ctx?: { params?: Record<string, string | string[]> }
-  ) => {
-    if (!ctx?.params?.chatId) {
+// Custom implementation of POST handler without withValidation to match Next.js 15 expectations
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ chatId: string }> }
+) {
+  try {
+    const params = await context.params
+    const chatId = params.chatId
+
+    if (!chatId) {
       return NextResponse.json(
         {
           error: "Chat ID is required",
@@ -72,8 +73,7 @@ export const POST = withValidation(
       )
     }
 
-    const chatId = ctx.params.chatId as string
-
+    // Validate chat ID
     try {
       ChatSchemas.getChatMessages.parse({ chatId })
     } catch (error) {
@@ -89,7 +89,37 @@ export const POST = withValidation(
       }
     }
 
-    const result = await chatService.sendMessage(chatId, data.message)
+    // Parse and validate request body
+    let body
+    try {
+      body = await req.json()
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error: "Invalid JSON in request body",
+          status: "error",
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate message
+    try {
+      messageOnlySchema.parse(body)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: error.errors,
+            status: "error",
+          },
+          { status: 400 }
+        )
+      }
+    }
+
+    const result = await chatService.sendMessage(chatId, body.message)
 
     if ("error" in result) {
       return NextResponse.json(
@@ -102,6 +132,11 @@ export const POST = withValidation(
       { data: result.data, status: "success" },
       { status: 201 }
     )
-  },
-  messageOnlySchema
-)
+  } catch (error) {
+    console.error("Failed to send message:", error)
+    return NextResponse.json(
+      { error: "Failed to send message", status: "error" },
+      { status: 500 }
+    )
+  }
+}
