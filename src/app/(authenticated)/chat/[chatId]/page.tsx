@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
-import { TChat, TMessage, TMessageRole } from "@/types/chat"
+import { TChat, TMessage } from "@/types/chat"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchFromApi, postToApi } from "@/utils/api"
 import { Message } from "@/components/Message"
@@ -16,13 +16,13 @@ export default function ChatDetailPage() {
 
   const [chat, setChat] = useState<TChat | null>(null)
   const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(false)
+  const [sending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Local messages to use as fallback if API fails
   const [localMessages, setLocalMessages] = useState<TMessage[]>([])
   const [useLocalMessages, setUseLocalMessages] = useState(false)
 
-  const fetchChat = async () => {
+  const fetchChat = useCallback(async () => {
     if (!chatId) return
 
     try {
@@ -47,11 +47,11 @@ export default function ChatDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [chatId])
 
   useEffect(() => {
     fetchChat()
-  }, [chatId])
+  }, [fetchChat])
 
   const handleSendMessage = async (message: string) => {
     if (!chatId || !message.trim()) return

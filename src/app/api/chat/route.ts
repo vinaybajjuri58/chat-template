@@ -24,7 +24,7 @@ export const POST = withValidation(
 )
 
 // GET /api/chat - Get all chats for the user
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const result = await chatService.getChatList()
 

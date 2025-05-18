@@ -19,7 +19,7 @@ export default function ChatPage() {
       try {
         const data = await fetchFromApi<{ data: TChatListItem[] }>("/chats")
         setChatsCount(data.data?.length || 0)
-      } catch (err) {
+      } catch {
         // No need to set error here, just for counting
       }
     }

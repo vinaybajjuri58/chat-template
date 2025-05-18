@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { formatZodError } from "@/utils/validations"
 
+type RequestContext = {
+  params?: Record<string, string | string[]>
+}
+
 /**
  * Middleware for validating request bodies against a Zod schema
  * @param handler The API route handler function
@@ -9,17 +13,24 @@ import { formatZodError } from "@/utils/validations"
  * @returns A wrapped handler function with validation
  */
 export function withValidation<T>(
-  handler: (req: NextRequest, data: T, ctx?: any) => Promise<NextResponse>,
+  handler: (
+    req: NextRequest,
+    data: T,
+    ctx?: RequestContext
+  ) => Promise<NextResponse>,
   schema: z.ZodType<T>
 ) {
-  return async (req: NextRequest, ctx?: any): Promise<NextResponse> => {
+  return async (
+    req: NextRequest,
+    ctx?: RequestContext
+  ): Promise<NextResponse> => {
     try {
       // Parse and validate the request body
       let body: unknown
 
       try {
         body = await req.json()
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           {
             error: "Invalid JSON in request body",
@@ -46,8 +57,7 @@ export function withValidation<T>(
         }
         throw error
       }
-    } catch (error) {
-      console.error("API error:", error)
+    } catch {
       return NextResponse.json(
         {
           error: "Internal server error",

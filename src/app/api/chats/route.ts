@@ -16,7 +16,7 @@ export async function GET() {
       { data: response.data },
       { status: response.status }
     )
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       { data: response.data },
       { status: response.status }
     )
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to create chat" },
       { status: 500 }

@@ -18,7 +18,7 @@ export function Message({ message, isLatest = false }: TMessageProps) {
   let formattedTime: string
   try {
     formattedTime = format(new Date(message.createdAt), "h:mm a")
-  } catch (error) {
+  } catch {
     formattedTime = "Unknown time"
   }
 
@@ -28,7 +28,7 @@ export function Message({ message, isLatest = false }: TMessageProps) {
       return (
         <div className="whitespace-pre-wrap break-words">{message.content}</div>
       )
-    } catch (error) {
+    } catch {
       setIsError(true)
       return (
         <div className="text-destructive">

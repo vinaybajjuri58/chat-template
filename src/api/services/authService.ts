@@ -227,7 +227,7 @@ export async function signup(
       if (error) {
         // Non-critical error, we still proceed with signup
       }
-    } catch (error) {
+    } catch {
       // Non-critical error, we still proceed with signup
     }
 

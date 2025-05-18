@@ -8,7 +8,6 @@ import {
 } from "@/types"
 import OpenAI from "openai"
 import { ChatCompletionMessageParam } from "openai/resources"
-import { APIError, RateLimitError } from "openai/error"
 
 // Initialize OpenAI client with proper error handling
 const getOpenAIClient = () => {
@@ -83,7 +82,7 @@ export async function createChat(title: string): Promise<TApiResponse<TChat>> {
       },
       status: 201,
     }
-  } catch (error) {
+  } catch {
     return {
       error: "Failed to create chat",
       status: 500,
@@ -138,7 +137,7 @@ export async function getChatList(): Promise<TApiResponse<TChatListItem[]>> {
       data: formattedData,
       status: 200,
     }
-  } catch (error) {
+  } catch {
     return {
       error: "Failed to retrieve chats",
       status: 500,
@@ -197,23 +196,19 @@ export async function getChatById(
     }
 
     // Fetch messages separately
-    const { data: messagesData, error: messagesError } = await supabase
+    const { data: messagesData } = await supabase
       .from("chat_messages")
       .select("*")
       .eq("chat_id", chatId)
       .order("created_at", { ascending: true })
 
-    if (messagesError) {
-      // Continue without messages if there's an error
-    }
-
     const messages = Array.isArray(messagesData)
-      ? messagesData.map((message: any) => ({
-          id: message.id,
-          content: message.content,
-          role: message.role,
-          createdAt: message.created_at,
-          chatId: message.chat_id,
+      ? messagesData.map((message) => ({
+          id: message.id as string,
+          content: message.content as string,
+          role: message.role as TMessageRole,
+          createdAt: message.created_at as string,
+          chatId: message.chat_id as string,
         }))
       : []
 
@@ -229,7 +224,7 @@ export async function getChatById(
       },
       status: 200,
     }
-  } catch (error) {
+  } catch {
     return {
       error: "Failed to retrieve chat",
       status: 500,
@@ -324,7 +319,7 @@ export async function sendMessage(
         }
 
         // Get chat history for context - using snake_case
-        const { data: chatHistory, error: historyError } = await supabase
+        const { data: chatHistory } = await supabase
           .from("chat_messages")
           .select("*")
           .eq("chat_id", chatId)
@@ -395,7 +390,7 @@ export async function sendMessage(
               aiMessageError?.message || "Failed to save AI response"
             )
           }
-        } catch (err) {
+        } catch {
           // Return the user message
           return {
             data: {
@@ -414,7 +409,7 @@ export async function sendMessage(
           .from("chats")
           .update({ updated_at: new Date().toISOString() })
           .eq("id", chatId)
-      } catch (aiError) {
+      } catch {
         // Still return the user message since it was saved
         // This allows the client to show the user message even if AI failed
       }
@@ -430,13 +425,13 @@ export async function sendMessage(
         },
         status: 201,
       }
-    } catch (error) {
+    } catch {
       return {
         error: "Failed to process message",
         status: 500,
       }
     }
-  } catch (error) {
+  } catch {
     return {
       error: "Failed to process message",
       status: 500,
@@ -498,16 +493,16 @@ export async function getChatMessages(
     // Map to camelCase for our app
     return {
       data:
-        data.map((message: any) => ({
-          id: message.id,
-          content: message.content,
-          role: message.role,
-          createdAt: message.created_at,
-          chatId: message.chat_id,
+        data.map((message) => ({
+          id: message.id as string,
+          content: message.content as string,
+          role: message.role as TMessageRole,
+          createdAt: message.created_at as string,
+          chatId: message.chat_id as string,
         })) || [],
       status: 200,
     }
-  } catch (error) {
+  } catch {
     return {
       error: "Failed to retrieve messages",
       status: 500,
