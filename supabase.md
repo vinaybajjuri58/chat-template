@@ -197,3 +197,82 @@ LLM_MODEL=gpt-3.5-turbo  # or another model of your choice
 ```
 
 This will allow your application to make requests to the OpenAI API for generating responses in the chat feature.
+
+## 8. Verifying Row Level Security (RLS)
+
+After setting up your tables and RLS policies, it's important to verify they're working correctly:
+
+### Check if RLS is Enabled
+
+1. In SQL Editor, run:
+   ```sql
+   SELECT tablename, rowsecurity
+   FROM pg_tables
+   WHERE schemaname = 'public'
+   AND tablename IN ('profiles', 'chats', 'chat_messages');
+   ```
+   This should show `true` in the `rowsecurity` column for all tables.
+
+### View RLS Policies
+
+1. In SQL Editor, run:
+   ```sql
+   SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
+   FROM pg_policies
+   WHERE schemaname = 'public'
+   AND tablename IN ('profiles', 'chats', 'chat_messages');
+   ```
+   This shows all policies for your tables.
+
+### Testing RLS Policies
+
+1. **Using the Supabase Dashboard**:
+
+   - Go to Authentication > Users
+   - Create test users with different emails
+   - In Table Editor, try viewing data as different users
+   - Verify users can only see their own data
+
+2. **Using API and Auth Testing**:
+   - Use multiple browser sessions or incognito windows
+   - Log in as different users
+   - Verify each user can only access their own data
+
+## 9. Understanding Table Relationships
+
+The database schema includes the following key relationships:
+
+### auth.users ⟶ profiles
+
+- One-to-one relationship
+- `profiles.id` references `auth.users.id`
+- Contains additional user information beyond auth data
+
+### auth.users ⟶ chats
+
+- One-to-many relationship (one user can have many chats)
+- `chats.user_id` references `auth.users.id`
+- Chats link directly to auth.users (not to profiles)
+
+### chats ⟶ chat_messages
+
+- One-to-many relationship (one chat can have many messages)
+- `chat_messages.chat_id` references `chats.id`
+
+### Design Rationale
+
+1. **Direct auth.users Connection**:
+
+   - Chats link directly to auth.users instead of profiles
+   - Ensures data integrity even if profile data changes
+   - More efficient by avoiding an extra join through profiles
+
+2. **Cascade Deletion**:
+
+   - When a user is deleted, all their chats are deleted (`ON DELETE CASCADE`)
+   - When a chat is deleted, all its messages are deleted
+
+3. **Indexes**:
+   - Indexes on foreign keys improve query performance
+   - `idx_chats_user_id` speeds up user-based chat queries
+   - `idx_chat_messages_chat_id` speeds up chat message retrieval

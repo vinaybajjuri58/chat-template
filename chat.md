@@ -256,9 +256,11 @@ After running the SQL setup, the next steps for implementation will include:
 
 1. **Chat Service Creation**:
 
-   - Functions to create chats
-   - Functions to add messages to chats
-   - Functions to retrieve chat history
+   - Implement `src/api/services/chatService.ts` with functions to:
+     - Create new chats
+     - Add messages to chats
+     - Retrieve chat history
+     - Handle OpenAI integration
 
 2. **API Endpoints**:
 
@@ -291,8 +293,8 @@ After running the SQL setup, the next steps for implementation will include:
 Add these types to your application for TypeScript support:
 
 ```typescript
-// Types for the chat feature
-type TChat = {
+// src/types/chat.ts
+export type TChat = {
   id: string
   user_id: string
   title: string
@@ -300,7 +302,7 @@ type TChat = {
   updated_at: string
 }
 
-type TChatMessage = {
+export type TChatMessage = {
   id: string
   chat_id: string
   content: string
@@ -309,22 +311,22 @@ type TChatMessage = {
 }
 
 // Request types for API endpoints
-type TCreateChatRequest = {
+export type TCreateChatRequest = {
   title: string
 }
 
-type TSendMessageRequest = {
+export type TSendMessageRequest = {
   chat_id: string
   message: string
 }
 
 // Response types
-type TChatResponse = {
+export type TChatResponse = {
   chat: TChat
   messages: TChatMessage[]
 }
 
-type TChatListResponse = {
+export type TChatListResponse = {
   chats: TChat[]
 }
 ```
