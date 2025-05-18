@@ -1,6 +1,6 @@
 # Supabase Setup Guide
 
-This document outlines all the steps required to set up Supabase for a new project.
+This document outlines the Supabase setup for this project.
 
 ## 1. Create a Supabase Project
 
@@ -57,13 +57,94 @@ CREATE POLICY "Users can update their own profile"
   USING (auth.uid() = id);
 ```
 
-### Create Additional Tables
+### Create Chat Feature Tables
 
-Create any other tables your application needs, remembering to:
+For the chat feature, create the following tables:
 
-1. Define appropriate relations to the profiles table
-2. Set up Row Level Security (RLS) for each table
-3. Create access policies based on your application's requirements
+```sql
+-- Create extension for UUID generation if not already available
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create chats table
+CREATE TABLE IF NOT EXISTS public.chats (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create chat messages table
+CREATE TABLE IF NOT EXISTS public.chat_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  chat_id UUID NOT NULL REFERENCES public.chats(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable Row Level Security on tables
+ALTER TABLE public.chats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for chats table
+CREATE POLICY "Users can view their own chats"
+  ON public.chats FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own chats"
+  ON public.chats FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own chats"
+  ON public.chats FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own chats"
+  ON public.chats FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Create policies for chat_messages table
+CREATE POLICY "Users can view messages from their own chats"
+  ON public.chat_messages FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM public.chats
+    WHERE chats.id = chat_messages.chat_id
+    AND chats.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can insert messages to their own chats"
+  ON public.chat_messages FOR INSERT
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM public.chats
+    WHERE chats.id = chat_messages.chat_id
+    AND chats.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can update messages in their own chats"
+  ON public.chat_messages FOR UPDATE
+  USING (EXISTS (
+    SELECT 1 FROM public.chats
+    WHERE chats.id = chat_messages.chat_id
+    AND chats.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can delete messages from their own chats"
+  ON public.chat_messages FOR DELETE
+  USING (EXISTS (
+    SELECT 1 FROM public.chats
+    WHERE chats.id = chat_messages.chat_id
+    AND chats.user_id = auth.uid()
+  ));
+
+-- Create an index on chat_id for faster queries
+CREATE INDEX IF NOT EXISTS idx_chat_messages_chat_id ON public.chat_messages(chat_id);
+
+-- Create an index on user_id for faster queries
+CREATE INDEX IF NOT EXISTS idx_chats_user_id ON public.chats(user_id);
+```
+
+See the [chat.md](./chat.md) file for detailed information about the chat feature implementation.
 
 ## 4. Auth Configuration
 
@@ -89,38 +170,7 @@ Create any other tables your application needs, remembering to:
 3. Enable any third-party providers as needed (e.g., Google, GitHub)
 4. For OAuth providers, set up redirect URLs and obtain client credentials
 
-## 5. Storage Configuration (if needed)
-
-1. Go to Storage > Buckets
-2. Create new buckets for your application (e.g., `avatars`, `public`, `private`)
-3. Configure bucket permissions:
-
-```sql
--- Example: Create a policy to allow authenticated users to upload to their own folder
-CREATE POLICY "Users can upload their own avatars"
-  ON storage.objects FOR INSERT
-  WITH CHECK (
-    bucket_id = 'avatars' AND
-    auth.uid()::text = (storage.foldername(name))[1]
-  );
-```
-
-## 6. Functions and Hooks (if needed)
-
-1. For database triggers, go to Database > Functions
-2. Create any necessary database functions and triggers
-3. For serverless functions, use Edge Functions in the Supabase dashboard
-
-## 7. Test Auth Flow
-
-1. Go to your local development environment
-2. Test authentication flows:
-   - Sign up
-   - Login
-   - Password reset
-   - Email verification
-
-## 8. Client Integration
+## 5. Client Integration
 
 1. Verify Supabase client initialization in your code:
 
@@ -130,29 +180,20 @@ CREATE POLICY "Users can upload their own avatars"
 
 2. Ensure auth state synchronization is working in your application
 
-## 9. Security Considerations
+## 6. Security Considerations
 
 1. Review all Row Level Security (RLS) policies
 2. Ensure service role key is only used for admin operations
 3. Test database access with different user accounts
 4. Keep the `SUPABASE_SERVICE_ROLE_KEY` secure and never expose it client-side
 
-## 10. Production Deployment
+## 7. LLM Integration (OpenAI)
 
-1. Add production environment variables to your hosting platform
-2. Update CORS settings in Supabase to allow your production domain
-3. Ensure email settings are configured for production use
+For the chat feature, you'll need to add an OpenAI API key to your environment variables:
 
-## 11. Database Migrations
+```
+OPENAI_API_KEY=your-openai-api-key
+LLM_MODEL=gpt-3.5-turbo  # or another model of your choice
+```
 
-For future schema changes, use one of these approaches:
-
-1. Direct SQL through Supabase dashboard
-2. Programmatic migrations using the `supabase-js` admin client
-3. Supabase CLI for local development and CI/CD pipelines
-
-## 12. Monitoring and Maintenance
-
-1. Set up database backups (automatic in paid plans)
-2. Monitor database usage in the Supabase dashboard
-3. Set up alerts for approaching free tier limits if applicable
+This will allow your application to make requests to the OpenAI API for generating responses in the chat feature.
