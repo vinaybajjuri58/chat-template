@@ -50,12 +50,12 @@ export async function createChat(title: string): Promise<TApiResponse<TChat>> {
       }
     }
 
-    // Create a new chat
+    // Create a new chat - using snake_case for column names
     const { data, error } = await supabase
       .from("chats")
       .insert({
         title,
-        userId: user.id,
+        user_id: user.id,
       })
       .select("*")
       .single()
@@ -74,13 +74,14 @@ export async function createChat(title: string): Promise<TApiResponse<TChat>> {
       }
     }
 
+    // Map snake_case DB columns to camelCase for our app
     return {
       data: {
         id: data.id,
         title: data.title,
-        userId: data.userId,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
+        userId: data.user_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
       },
       status: 201,
     }
@@ -106,6 +107,12 @@ export async function getChatList(): Promise<TApiResponse<TChatListItem[]>> {
       error: userError,
     } = await supabase.auth.getUser()
 
+    console.log(
+      "Auth user check:",
+      user ? "User found" : "No user",
+      userError ? `Error: ${userError.message}` : "No error"
+    )
+
     if (userError || !user) {
       return {
         error: "Authentication required",
@@ -113,12 +120,12 @@ export async function getChatList(): Promise<TApiResponse<TChatListItem[]>> {
       }
     }
 
-    // Get all chats for this user
+    // Get all chats for this user - using snake_case for column names
     const { data, error } = await supabase
       .from("chats")
-      .select("id, title, createdAt, updatedAt")
-      .eq("userId", user.id)
-      .order("updatedAt", { ascending: false })
+      .select("id, title, created_at, updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
 
     if (error) {
       return {
@@ -127,12 +134,20 @@ export async function getChatList(): Promise<TApiResponse<TChatListItem[]>> {
       }
     }
 
+    // Map snake_case DB columns to camelCase for our app
+    const formattedData =
+      data?.map((chat) => ({
+        id: chat.id,
+        title: chat.title,
+        createdAt: chat.created_at,
+        updatedAt: chat.updated_at,
+      })) || []
+
     return {
-      data: data || [],
+      data: formattedData,
       status: 200,
     }
   } catch (error) {
-    console.error("Get chat list error:", error)
     return {
       error: "Failed to retrieve chats",
       status: 500,
@@ -162,59 +177,63 @@ export async function getChatById(
       }
     }
 
-    // Get the specific chat with messages
-    const { data, error } = await supabase
+    // Get the specific chat - using snake_case
+    const { data: chatData, error: chatError } = await supabase
       .from("chats")
-      .select("*, messages(*)")
+      .select("*")
       .eq("id", chatId)
-      .eq("userId", user.id)
+      .eq("user_id", user.id)
       .single()
 
-    if (error) {
-      if (error.code === "PGRST116") {
+    if (chatError) {
+      if (chatError.code === "PGRST116") {
         return {
           error: "Chat not found",
           status: 404,
         }
       }
       return {
-        error: error.message,
+        error: chatError.message,
         status: 500,
       }
     }
 
-    if (!data) {
+    if (!chatData) {
       return {
         error: "Chat not found",
         status: 404,
       }
     }
 
-    const messages = Array.isArray(data.messages)
-      ? data.messages.map(
-          (message: TDatabase["public"]["Tables"]["messages"]["Row"]) => ({
-            id: message.id,
-            content: message.content,
-            role: message.role,
-            createdAt: message.createdAt,
-            chatId: message.chatId,
-          })
-        )
+    // Fetch messages separately
+    const { data: messagesData, error: messagesError } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("chat_id", chatId)
+      .order("created_at", { ascending: true })
+
+    if (messagesError) {
+      // Continue without messages if there's an error
+    }
+
+    const messages = Array.isArray(messagesData)
+      ? messagesData.map((message: any) => ({
+          id: message.id,
+          content: message.content,
+          role: message.role,
+          createdAt: message.created_at,
+          chatId: message.chat_id,
+        }))
       : []
 
-    // Sort messages by createdAt timestamp
-    messages.sort(
-      (a: TMessage, b: TMessage) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    )
-
+    // Map snake_case DB columns to camelCase for our app
     return {
       data: {
-        id: data.id,
-        title: data.title,
-        userId: data.userId,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
+        id: chatData.id,
+        title: chatData.title,
+        userId: chatData.user_id,
+        createdAt: chatData.created_at,
+        updatedAt: chatData.updated_at,
         messages,
       },
       status: 200,
@@ -251,12 +270,12 @@ export async function sendMessage(
       }
     }
 
-    // Verify the chat exists and belongs to the user
+    // Verify the chat exists and belongs to the user - using snake_case
     const { data: chatData, error: chatError } = await supabase
       .from("chats")
       .select("id")
       .eq("id", chatId)
-      .eq("userId", user.id)
+      .eq("user_id", user.id)
       .single()
 
     if (chatError || !chatData) {
@@ -266,11 +285,11 @@ export async function sendMessage(
       }
     }
 
-    // Insert user message
+    // Insert user message - using snake_case
     const { data: userMessageData, error: messageError } = await supabase
       .from("messages")
       .insert({
-        chatId,
+        chat_id: chatId,
         content: message,
         role: TMessageRole.User,
       })
@@ -291,12 +310,12 @@ export async function sendMessage(
         throw new Error("OpenAI client initialization failed. Check API key.")
       }
 
-      // Get chat history for context
+      // Get chat history for context - using snake_case
       const { data: chatHistory, error: historyError } = await supabase
         .from("messages")
         .select("*")
-        .eq("chatId", chatId)
-        .order("createdAt", { ascending: true })
+        .eq("chat_id", chatId)
+        .order("created_at", { ascending: true })
         .limit(50) // Limit chat history to last 50 messages for token efficiency
 
       // If chat history isn't available, just use the current message
@@ -305,8 +324,8 @@ export async function sendMessage(
           role: TMessageRole.User,
           content: message,
           id: userMessageData.id,
-          chatId,
-          createdAt: userMessageData.createdAt,
+          chat_id: chatId,
+          created_at: userMessageData.created_at,
         },
       ]
 
@@ -349,11 +368,11 @@ export async function sendMessage(
           throw new Error("Empty response from AI model")
         }
 
-        // Save AI response
+        // Save AI response - using snake_case
         const { data: aiMessageData, error: aiMessageError } = await supabase
           .from("messages")
           .insert({
-            chatId,
+            chat_id: chatId,
             content: aiResponse,
             role: TMessageRole.Assistant,
           })
@@ -385,10 +404,10 @@ export async function sendMessage(
         throw err
       }
 
-      // Update chat timestamp
+      // Update chat timestamp - using snake_case
       await supabase
         .from("chats")
-        .update({ updatedAt: new Date().toISOString() })
+        .update({ updated_at: new Date().toISOString() })
         .eq("id", chatId)
     } catch (aiError) {
       console.error("AI processing error:", aiError)
@@ -403,8 +422,8 @@ export async function sendMessage(
         id: userMessageData.id,
         content: userMessageData.content,
         role: userMessageData.role,
-        createdAt: userMessageData.createdAt,
-        chatId: userMessageData.chatId,
+        createdAt: userMessageData.created_at,
+        chatId: userMessageData.chat_id,
       },
       status: 201,
     }
@@ -439,12 +458,12 @@ export async function getChatMessages(
       }
     }
 
-    // Verify the chat exists and belongs to the user
+    // Verify the chat exists and belongs to the user - using snake_case
     const { data: chatData, error: chatError } = await supabase
       .from("chats")
       .select("id")
       .eq("id", chatId)
-      .eq("userId", user.id)
+      .eq("user_id", user.id)
       .single()
 
     if (chatError || !chatData) {
@@ -454,12 +473,12 @@ export async function getChatMessages(
       }
     }
 
-    // Get all messages for this chat
+    // Get all messages for this chat - using snake_case
     const { data, error } = await supabase
       .from("messages")
       .select("*")
-      .eq("chatId", chatId)
-      .order("createdAt", { ascending: true })
+      .eq("chat_id", chatId)
+      .order("created_at", { ascending: true })
 
     if (error) {
       return {
@@ -468,17 +487,16 @@ export async function getChatMessages(
       }
     }
 
+    // Map to camelCase for our app
     return {
       data:
-        data.map(
-          (message: TDatabase["public"]["Tables"]["messages"]["Row"]) => ({
-            id: message.id,
-            content: message.content,
-            role: message.role,
-            createdAt: message.createdAt,
-            chatId: message.chatId,
-          })
-        ) || [],
+        data.map((message: any) => ({
+          id: message.id,
+          content: message.content,
+          role: message.role,
+          createdAt: message.created_at,
+          chatId: message.chat_id,
+        })) || [],
       status: 200,
     }
   } catch (error) {

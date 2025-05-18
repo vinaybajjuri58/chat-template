@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle, XCircle, RefreshCw } from "lucide-react"
 import { postToApi } from "@/utils/api"
 import Link from "next/link"
+import apiClient from "@/utils/apiClient"
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
@@ -36,14 +37,16 @@ export default function VerifyEmailPage() {
         return
       }
 
-      // Redirect to the API endpoint with the parameters
-      const response = await fetch(
-        `/auth/confirm?token_hash=${encodeURIComponent(
-          token_hash
-        )}&type=${encodeURIComponent(type)}&json=true`
-      )
+      // Use axios to call the auth confirmation endpoint
+      const response = await apiClient.get(`/auth/confirm`, {
+        params: {
+          token_hash: token_hash,
+          type: type,
+          json: true,
+        },
+      })
 
-      const data = await response.json()
+      const data = response.data
 
       if (data.success) {
         setStatus("success")
