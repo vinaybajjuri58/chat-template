@@ -226,11 +226,9 @@ export async function signup(
 
       if (error) {
         // Non-critical error, we still proceed with signup
-        console.log("Email verification send error:", error.message)
       }
     } catch (error) {
       // Non-critical error, we still proceed with signup
-      console.log("Email verification error:", error)
     }
 
     // Use Supabase's built-in trigger to create the profile

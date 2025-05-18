@@ -5,7 +5,6 @@ import {
   TChatListItem,
   TMessage,
   TMessageRole,
-  TDatabase,
 } from "@/types"
 import OpenAI from "openai"
 import { ChatCompletionMessageParam } from "openai/resources"
@@ -16,7 +15,6 @@ const getOpenAIClient = () => {
   const apiKey = process.env.OPENAI_API_KEY
 
   if (!apiKey) {
-    console.error("OPENAI_API_KEY is not set in environment variables")
     return null
   }
 
@@ -86,7 +84,6 @@ export async function createChat(title: string): Promise<TApiResponse<TChat>> {
       status: 201,
     }
   } catch (error) {
-    console.error("Create chat error:", error)
     return {
       error: "Failed to create chat",
       status: 500,
@@ -106,12 +103,6 @@ export async function getChatList(): Promise<TApiResponse<TChatListItem[]>> {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
-
-    console.log(
-      "Auth user check:",
-      user ? "User found" : "No user",
-      userError ? `Error: ${userError.message}` : "No error"
-    )
 
     if (userError || !user) {
       return {
@@ -239,7 +230,6 @@ export async function getChatById(
       status: 200,
     }
   } catch (error) {
-    console.error("Get chat by ID error:", error)
     return {
       error: "Failed to retrieve chat",
       status: 500,
@@ -264,14 +254,11 @@ export async function sendMessage(
     } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      console.log("Authentication error:", userError)
       return {
         error: "Authentication required",
         status: 401,
       }
     }
-
-    console.log("Authenticated user:", user.id)
 
     // Verify the chat exists and belongs to the user - using snake_case
     const { data: chatData, error: chatError } = await supabase
@@ -282,20 +269,11 @@ export async function sendMessage(
       .single()
 
     if (chatError || !chatData) {
-      console.log("Chat verification error:", chatError)
       return {
         error: "Chat not found or access denied",
         status: 404,
       }
     }
-
-    console.log("Chat verified, inserting user message")
-
-    // Insert user message - using snake_case
-    console.log("Inserting message with data:", {
-      chat_id: chatId,
-      role: TMessageRole.User,
-    })
 
     try {
       // Create a timestamp for consistency
@@ -315,12 +293,6 @@ export async function sendMessage(
         .single()
 
       if (messageError) {
-        console.log("Message insertion error details:", {
-          code: messageError.code,
-          message: messageError.message,
-          details: messageError.details,
-          hint: messageError.hint,
-        })
         return {
           error: messageError?.message || "Failed to send message",
           status: 500,
@@ -328,27 +300,16 @@ export async function sendMessage(
       }
 
       if (!userMessageData) {
-        console.log("No user message data returned after insertion")
         return {
           error: "Failed to save message to database",
           status: 500,
         }
       }
 
-      console.log("User message saved successfully:", {
-        id: userMessageData.id,
-        role: userMessageData.role,
-      })
-
       try {
         // Initialize OpenAI client
         const openai = getOpenAIClient()
         if (!openai) {
-          console.log("Failed to initialize OpenAI client")
-          console.warn(
-            "OpenAI client not available. Skipping AI response generation."
-          )
-
           // Return the user message without attempting AI response
           return {
             data: {
@@ -361,8 +322,6 @@ export async function sendMessage(
             status: 201,
           }
         }
-
-        console.log("OpenAI client initialized")
 
         // Get chat history for context - using snake_case
         const { data: chatHistory, error: historyError } = await supabase
@@ -383,21 +342,11 @@ export async function sendMessage(
           },
         ]
 
-        if (historyError) {
-          console.warn(
-            "Failed to retrieve chat history, using only current message:",
-            historyError
-          )
-        }
-
         // Get model from environment variables or use default
         const model = process.env.OPENAI_MODEL || DEFAULT_MODEL
-        console.log("Using model:", model)
 
         // Generate AI response with specific error handling for OpenAI errors
         try {
-          console.log("Preparing to call OpenAI API")
-
           const messagesForAPI = [
             {
               role: "system",
@@ -414,8 +363,6 @@ export async function sendMessage(
             ),
           ]
 
-          console.log("Message history length:", messagesForAPI.length)
-
           const completion = await openai.chat.completions.create({
             model,
             messages: messagesForAPI,
@@ -423,16 +370,11 @@ export async function sendMessage(
             max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS || "2000", 10),
           })
 
-          console.log("OpenAI API call successful")
-
           const aiResponse = completion.choices[0]?.message?.content
 
           if (!aiResponse) {
-            console.log("Empty AI response received")
             throw new Error("Empty response from AI model")
           }
-
-          console.log("AI response received, length:", aiResponse.length)
 
           // Save AI response - using snake_case
           const now = new Date().toISOString() // Timestamp for consistency
@@ -454,27 +396,7 @@ export async function sendMessage(
             )
           }
         } catch (err) {
-          // Typed error handling specific to OpenAI
-          if (err instanceof APIError) {
-            console.error(`OpenAI API Error: ${err.status} - ${err.name}`)
-
-            if (err instanceof RateLimitError) {
-              // Handle rate limiting specifically
-              console.error(
-                "Rate limit exceeded, consider upgrading your OpenAI plan"
-              )
-            }
-
-            // Log headers for debugging
-            console.error(`Headers: ${JSON.stringify(err.headers)}`)
-          }
-
-          console.error("AI response generation failed:", err)
-
-          // Instead of re-throwing, return the user message
-          console.warn(
-            "Returning just the user message due to OpenAI API error"
-          )
+          // Return the user message
           return {
             data: {
               id: userMessageData.id,
@@ -493,8 +415,6 @@ export async function sendMessage(
           .update({ updated_at: new Date().toISOString() })
           .eq("id", chatId)
       } catch (aiError) {
-        console.error("AI processing error:", aiError)
-
         // Still return the user message since it was saved
         // This allows the client to show the user message even if AI failed
       }
@@ -511,14 +431,12 @@ export async function sendMessage(
         status: 201,
       }
     } catch (error) {
-      console.error("Send message error:", error)
       return {
         error: "Failed to process message",
         status: 500,
       }
     }
   } catch (error) {
-    console.error("Send message error:", error)
     return {
       error: "Failed to process message",
       status: 500,
@@ -590,7 +508,6 @@ export async function getChatMessages(
       status: 200,
     }
   } catch (error) {
-    console.error("Get chat messages error:", error)
     return {
       error: "Failed to retrieve messages",
       status: 500,

@@ -57,7 +57,6 @@ export default function ChatDetailPage() {
     if (!chatId || !message.trim()) return
 
     try {
-      console.log("Trying real API endpoint first")
       await postToApi<{ data: TMessage }, { message: string }>(
         `/chat/${chatId}/message`,
         { message }
@@ -65,9 +64,6 @@ export default function ChatDetailPage() {
 
       // If successful, refresh chat from API
       await fetchChat()
-      setError(
-        "Message sent! Click the refresh button if it doesn't appear immediately."
-      )
       return // No need to use fallback
     } catch (apiError) {
       console.error("API endpoint failed:", apiError)

@@ -61,9 +61,10 @@ export const POST = withValidation(
     data: { message: string },
     context: { params: { chatId: string } }
   ) => {
-    // Validate that the URL parameter chatId is a valid UUID
+    const { chatId } = await context.params
+
     try {
-      ChatSchemas.getChatMessages.parse({ chatId: context.params.chatId })
+      ChatSchemas.getChatMessages.parse({ chatId })
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -77,10 +78,7 @@ export const POST = withValidation(
       }
     }
 
-    const result = await chatService.sendMessage(
-      context.params.chatId,
-      data.message
-    )
+    const result = await chatService.sendMessage(chatId, data.message)
 
     if ("error" in result) {
       return NextResponse.json(

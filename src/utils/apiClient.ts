@@ -37,10 +37,8 @@ apiClient.interceptors.response.use(
           !currentPath.includes("/login") &&
           !currentPath.includes("/signup")
         ) {
-          console.log("Unauthorized access detected, redirecting to login")
           window.location.href = "/login"
         } else {
-          console.log("401 error on auth page, not redirecting")
         }
       }
     }
