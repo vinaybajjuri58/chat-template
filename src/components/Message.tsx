@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { AlertCircle, User, Bot } from "lucide-react"
 import { useState } from "react"
+import ReactMarkdown, { Options } from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeRaw from "rehype-raw"
 
 type TMessageProps = {
   message: TMessage
@@ -26,9 +29,30 @@ export function Message({ message, isLatest = false }: TMessageProps) {
   const renderContent = () => {
     try {
       return (
-        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        <div className="prose dark:prose-invert prose-sm sm:prose-base max-w-none break-words">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw] as Options["rehypePlugins"]}
+            components={{
+              p: ({ node, ...props }) => (
+                <p className="mb-2 last:mb-0" {...props} />
+              ),
+              a: ({ node, ...props }) => (
+                <a
+                  className="text-primary hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  {...props}
+                />
+              ),
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
+        </div>
       )
-    } catch {
+    } catch (e) {
+      console.error("Error rendering markdown:", e)
       setIsError(true)
       return (
         <div className="text-destructive">
