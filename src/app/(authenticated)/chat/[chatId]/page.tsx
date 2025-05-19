@@ -81,7 +81,6 @@ export default function ChatDetailPage() {
       // If successful, refresh chat from API
       await fetchChat()
       setAiResponding(false)
-      return // No need to use fallback
     } catch (apiError) {
       console.error("API endpoint failed:", apiError)
       setAiResponding(false)
@@ -90,7 +89,7 @@ export default function ChatDetailPage() {
 
   if (loading && !chat) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="w-full md:w-4/5 lg:w-3/5 mx-auto p-6 space-y-4">
         <Skeleton className="h-8 w-64" />
         <div className="space-y-2">
           <Skeleton className="h-24 w-full" />
@@ -107,7 +106,7 @@ export default function ChatDetailPage() {
 
   if (error && !chat && displayMessages.length === 0) {
     return (
-      <div className="p-6">
+      <div className="w-full md:w-4/5 lg:w-3/5 mx-auto p-6">
         <div className="bg-destructive/10 text-destructive p-4 rounded-md">
           {error}
         </div>
@@ -117,7 +116,7 @@ export default function ChatDetailPage() {
 
   if (!chat && displayMessages.length === 0) {
     return (
-      <div className="p-6">
+      <div className="w-full md:w-4/5 lg:w-3/5 mx-auto p-6">
         <div className="bg-muted p-4 rounded-md">Chat not found</div>
       </div>
     )
@@ -153,60 +152,62 @@ export default function ChatDetailPage() {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4">
-        {displayMessages.length > 0 ? (
-          <div className="space-y-6 py-4">
-            {displayMessages.map((message, index) => (
-              <Message
-                key={message.id}
-                message={message}
-                isLatest={index === displayMessages.length - 1}
-              />
-            ))}
-            {aiResponding && (
-              <div className="flex w-full items-start gap-4 py-4 animate-pulse">
-                <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border bg-primary text-primary-foreground">
-                  <Bot className="h-4 w-4" />
-                </div>
-                <div className="flex flex-1 flex-col">
-                  <div className="flex items-center gap-2">
-                    <div className="font-semibold">Assistant</div>
-                    <div className="text-xs text-muted-foreground">
-                      thinking...
+      <div className="w-full md:w-4/5 lg:w-3/5 mx-auto flex flex-col flex-1 overflow-hidden pt-2">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6">
+          {displayMessages.length > 0 ? (
+            <div className="space-y-2 pb-4">
+              {displayMessages.map((message, index) => (
+                <Message
+                  key={message.id}
+                  message={message}
+                  isLatest={index === displayMessages.length - 1}
+                />
+              ))}
+              {aiResponding && (
+                <div className="flex w-full items-start gap-4 py-4 animate-pulse pl-10 sm:pl-20">
+                  <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full border bg-accent text-accent-foreground">
+                    <Bot className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col rounded-lg px-3 py-2 bg-accent text-accent-foreground max-w-[75%]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="font-semibold">Assistant</div>
+                      <div className="text-xs text-accent-foreground/70">
+                        thinking...
+                      </div>
+                    </div>
+                    <div className="mt-1 text-accent-foreground">
+                      <div className="flex space-x-1 mt-2">
+                        <div className="h-2 w-2 rounded-full bg-accent-foreground/50 animate-bounce"></div>
+                        <div className="h-2 w-2 rounded-full bg-accent-foreground/50 animate-bounce [animation-delay:0.2s]"></div>
+                        <div className="h-2 w-2 rounded-full bg-accent-foreground/50 animate-bounce [animation-delay:0.4s]"></div>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-1 text-muted-foreground">
-                    <div className="flex space-x-2 mt-3">
-                      <div className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce"></div>
-                      <div className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:0.2s]"></div>
-                      <div className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:0.4s]"></div>
-                    </div>
-                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full text-center text-muted-foreground py-8">
-            <div>
-              <p className="mb-2">No messages yet.</p>
-              <p className="text-sm">Start your conversation below.</p>
+              )}
             </div>
+          ) : (
+            <div className="flex items-center justify-center h-full text-center text-muted-foreground py-8">
+              <div>
+                <p className="mb-2">No messages yet.</p>
+                <p className="text-sm">Start your conversation below.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div className="mx-4 sm:mx-6 my-2 px-3 py-2 text-sm bg-destructive/10 text-destructive rounded-md">
+            {error}
           </div>
         )}
+
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          isDisabled={aiResponding}
+          className="border-t mt-auto px-4 sm:px-6 pb-2"
+        />
       </div>
-
-      {error && (
-        <div className="mx-4 my-2 px-3 py-2 text-sm bg-destructive/10 text-destructive rounded-md">
-          {error}
-        </div>
-      )}
-
-      <MessageInput
-        onSendMessage={handleSendMessage}
-        isDisabled={aiResponding}
-        className="border-t mt-auto"
-      />
     </div>
   )
 }
