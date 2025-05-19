@@ -9,9 +9,8 @@ import ReactMarkdown, { Options } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
 
-// Custom type for code component props, including node
-type CodeProps = React.HTMLAttributes<HTMLElement> & {
-  node?: any // react-markdown passes the AST node
+// Custom type for code component props
+type TCodeProps = {
   inline?: boolean
   className?: string
   children?: ReactNode
@@ -40,10 +39,8 @@ export function Message({ message, isLatest = false }: TMessageProps) {
           remarkPlugins={[remarkGfm] as Options["remarkPlugins"]}
           rehypePlugins={[rehypeRaw] as Options["rehypePlugins"]}
           components={{
-            p: ({ node, ...props }) => (
-              <p className="mb-2 last:mb-0" {...props} />
-            ),
-            a: ({ node, ...props }) => (
+            p: ({ ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+            a: ({ ...props }) => (
               <a
                 className={cn(
                   isUserMessage
@@ -55,13 +52,7 @@ export function Message({ message, isLatest = false }: TMessageProps) {
                 {...props}
               />
             ),
-            code: ({
-              node,
-              inline,
-              className,
-              children,
-              ...props
-            }: CodeProps) => {
+            code: ({ inline, className, children, ...props }: TCodeProps) => {
               const match = /language-(\w+)/.exec(className || "")
               const codeBlockClasses =
                 "rounded-md p-3 my-2 text-sm overflow-x-auto"
@@ -112,10 +103,10 @@ export function Message({ message, isLatest = false }: TMessageProps) {
                 </FencedCodeBlock>
               )
             },
-            ul: ({ node, ...props }) => (
+            ul: ({ ...props }) => (
               <ul className="list-disc pl-5 my-2" {...props} />
             ),
-            ol: ({ node, ...props }) => (
+            ol: ({ ...props }) => (
               <ol className="list-decimal pl-5 my-2" {...props} />
             ),
           }}
