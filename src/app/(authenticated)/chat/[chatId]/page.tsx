@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
-import { TChat, TMessage } from "@/types/chat"
+import { TChat, TMessage, TMessageRole } from "@/types/chat"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchFromApi, postToApi } from "@/utils/api"
 import { Message } from "@/components/Message"
 import { MessageInput } from "@/components/MessageInput"
 import { Button } from "@/components/ui/button"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Bot } from "lucide-react"
 
 export default function ChatDetailPage() {
   const params = useParams()
@@ -16,7 +16,7 @@ export default function ChatDetailPage() {
 
   const [chat, setChat] = useState<TChat | null>(null)
   const [loading, setLoading] = useState(true)
-  const [sending] = useState(false)
+  const [aiResponding, setAiResponding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Local messages to use as fallback if API fails
   const [localMessages, setLocalMessages] = useState<TMessage[]>([])
@@ -56,6 +56,22 @@ export default function ChatDetailPage() {
   const handleSendMessage = async (message: string) => {
     if (!chatId || !message.trim()) return
 
+    // Create a temporary user message to display immediately
+    const tempUserMessage: TMessage = {
+      id: `temp-user-${Date.now()}`,
+      content: message,
+      role: TMessageRole.User,
+      createdAt: new Date().toISOString(),
+      chatId,
+    }
+
+    // Update the local messages with the user message
+    setLocalMessages((prev) => [...prev, tempUserMessage])
+    setUseLocalMessages(true)
+
+    // Show the AI is responding
+    setAiResponding(true)
+
     try {
       await postToApi<{ data: TMessage }, { message: string }>(
         `/chat/${chatId}/message`,
@@ -64,9 +80,11 @@ export default function ChatDetailPage() {
 
       // If successful, refresh chat from API
       await fetchChat()
+      setAiResponding(false)
       return // No need to use fallback
     } catch (apiError) {
       console.error("API endpoint failed:", apiError)
+      setAiResponding(false)
     }
   }
 
@@ -145,6 +163,28 @@ export default function ChatDetailPage() {
                 isLatest={index === displayMessages.length - 1}
               />
             ))}
+            {aiResponding && (
+              <div className="flex w-full items-start gap-4 py-4 animate-pulse">
+                <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border bg-primary text-primary-foreground">
+                  <Bot className="h-4 w-4" />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold">Assistant</div>
+                    <div className="text-xs text-muted-foreground">
+                      typing...
+                    </div>
+                  </div>
+                  <div className="mt-1 text-muted-foreground">
+                    <div className="flex space-x-2 mt-3">
+                      <div className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce"></div>
+                      <div className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:0.2s]"></div>
+                      <div className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:0.4s]"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-center text-muted-foreground py-8">
@@ -164,7 +204,7 @@ export default function ChatDetailPage() {
 
       <MessageInput
         onSendMessage={handleSendMessage}
-        isDisabled={sending}
+        isDisabled={aiResponding}
         className="border-t mt-auto"
       />
     </div>
