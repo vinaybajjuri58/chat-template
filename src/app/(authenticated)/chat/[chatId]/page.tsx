@@ -172,7 +172,7 @@ export default function ChatDetailPage() {
                   <div className="flex items-center gap-2">
                     <div className="font-semibold">Assistant</div>
                     <div className="text-xs text-muted-foreground">
-                      typing...
+                      thinking...
                     </div>
                   </div>
                   <div className="mt-1 text-muted-foreground">
