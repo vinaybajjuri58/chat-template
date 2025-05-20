@@ -1,7 +1,10 @@
-import * as React from "react"
-import { GalleryVerticalEnd } from "lucide-react"
+"use client"
 
-import { NavMain } from "@/components/nav-main"
+import * as React from "react"
+import { LayoutDashboard, MessageSquare, PlusCircle } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+
 import { SignOutButton } from "@/components/SignOutButton"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import {
@@ -14,152 +17,88 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-
-// This is sample data.
-const data = {
-  navMain: [
-    {
-      title: "Getting Started",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Building Your Application",
-      url: "#",
-      items: [
-        {
-          title: "Routing",
-          url: "#",
-        },
-        {
-          title: "Data Fetching",
-          url: "#",
-          isActive: true,
-        },
-        {
-          title: "Rendering",
-          url: "#",
-        },
-        {
-          title: "Caching",
-          url: "#",
-        },
-        {
-          title: "Styling",
-          url: "#",
-        },
-        {
-          title: "Optimizing",
-          url: "#",
-        },
-        {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "API Reference",
-      url: "#",
-      items: [
-        {
-          title: "Components",
-          url: "#",
-        },
-        {
-          title: "File Conventions",
-          url: "#",
-        },
-        {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Architecture",
-      url: "#",
-      items: [
-        {
-          title: "Accessibility",
-          url: "#",
-        },
-        {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
-          url: "#",
-        },
-      ],
-    },
-  ],
-}
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { fetchFromApi, postToApi } from "@/utils/api"
+import { TChatListItem } from "@/types/chat"
+import { useState, useEffect } from "react"
+import { cn } from "@/lib/utils"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [isCreating, setIsCreating] = useState(false)
+  const [chats, setChats] = useState<TChatListItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Extract the current chat ID from the path if we're on a chat page
+  const currentChatId = pathname.startsWith("/chat/")
+    ? pathname.split("/")[2]
+    : undefined
+
+  useEffect(() => {
+    async function fetchChats() {
+      try {
+        setIsLoading(true)
+        const data = await fetchFromApi<{ data: TChatListItem[] }>("/chats")
+        setChats(data.data || [])
+      } catch (err) {
+        console.error("Error fetching chats:", err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchChats()
+  }, [])
+
+  async function handleCreateNewChat() {
+    try {
+      setIsCreating(true)
+
+      // Generate a sequential title based on the number of existing chats
+      const chatNumber = chats.length + 1
+      const chatTitle = `Chat ${chatNumber}`
+
+      const data = await postToApi<{ data: { id: string } }, { title: string }>(
+        "/chats",
+        {
+          title: chatTitle,
+        }
+      )
+
+      // Update the local chats list with the new chat
+      const newChat = {
+        id: data.data.id,
+        title: chatTitle,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      setChats([newChat, ...chats])
+
+      // Navigate to the new chat
+      router.push(`/chat/${data.data.id}`)
+    } catch (err) {
+      console.error("Error creating new chat:", err)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <a href="/dashboard">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <GalleryVerticalEnd className="size-4" />
+                  <LayoutDashboard className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Documentation</span>
-                  <span className="">v1.0.0</span>
+                  <span className="font-medium">AI Chat App</span>
+                  <span className="text-xs">Dashboard</span>
                 </div>
               </a>
             </SidebarMenuButton>
@@ -167,7 +106,52 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <div className="px-3 py-2">
+          <Button
+            variant="secondary"
+            className="w-full justify-start"
+            onClick={handleCreateNewChat}
+            disabled={isCreating}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            {isCreating ? "Creating..." : "New Chat"}
+          </Button>
+        </div>
+
+        <div className="mt-2 px-2">
+          <div className="text-xs font-medium text-muted-foreground px-3 py-1">
+            Your Chats
+          </div>
+
+          {isLoading ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              Loading...
+            </div>
+          ) : chats.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              No chats yet
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {chats.map((chat) => (
+                <Link
+                  key={chat.id}
+                  href={`/chat/${chat.id}`}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors",
+                    "hover:bg-muted",
+                    currentChatId === chat.id
+                      ? "bg-muted font-medium"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="truncate">{chat.title}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <div className="border-t p-4">

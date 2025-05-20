@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { User } from "@supabase/supabase-js"
 import { useState } from "react"
+import { postToApi } from "@/utils/api"
 
 // Create a type that can handle either the standard User or our modified version
 type UserWithPossiblyNullEmail =
@@ -14,13 +15,13 @@ type UserWithPossiblyNullEmail =
       [key: string]: unknown
     }
 
-interface EmailVerificationStatusProps {
+type TEmailVerificationStatusProps = {
   user: UserWithPossiblyNullEmail | null
 }
 
 export function EmailVerificationStatus({
   user,
-}: EmailVerificationStatusProps) {
+}: TEmailVerificationStatusProps) {
   const [isResending, setIsResending] = useState(false)
   const [resendStatus, setResendStatus] = useState<{
     success?: string
@@ -36,18 +37,7 @@ export function EmailVerificationStatus({
     setResendStatus({})
 
     try {
-      const response = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to resend verification email")
-      }
+      await postToApi("auth/resend-verification", {})
 
       setResendStatus({
         success: "Verification email sent! Please check your inbox.",

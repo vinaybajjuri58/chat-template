@@ -77,20 +77,7 @@ export function LoginForm({
     setResendStatus(null)
 
     try {
-      const response = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to resend verification email")
-      }
-
+      await postToApi("auth/resend-verification", { email })
       setResendStatus("Verification email sent! Please check your inbox.")
     } catch (err) {
       setError(
