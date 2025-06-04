@@ -17,6 +17,24 @@
       {
         "forbid": [">", "}"]
       }
+    ],
+    "@typescript-eslint/consistent-type-definitions": ["error", "type"],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "axios",
+            "message": "Use fetchFromApi/postToApi/putToApi/deleteFromApi from '@/utils/api' instead of direct axios."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["*fetch*", "*XMLHttpRequest*"],
+            "message": "Use the API utilities from '@/utils/api' instead of fetch or XMLHttpRequest."
+          }
+        ]
+      }
     ]
   }
 }
